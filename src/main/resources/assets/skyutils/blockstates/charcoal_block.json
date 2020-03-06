@@ -1,0 +1,5 @@
+{
+    "variants": {
+        "": { "model": "skyutils:block/charcoal_block" }
+    }
+}

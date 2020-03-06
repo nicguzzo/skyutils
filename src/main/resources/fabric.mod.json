@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "skyutils",
+  "version": "${version}",
+
+  "name": "Sky utilities Mod",
+  "description": "Sky utilities",
+  "authors": [
+    "Me!"
+  ],
+  "contact": {
+    "homepage": "",
+    "sources": ""
+  },
+
+  "license": "GPL3",
+  "icon": "assets/skyutils/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.nicguzzo.SkyutilsMod"
+    ],
+    "client": [
+      "net.nicguzzo.SkyutilsClientMod"
+    ]
+  },
+  "mixins": [
+    "skyutils.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.7.2",
+    "fabric": "*",
+    "minecraft": "1.15.x"
+  }
+
+}
