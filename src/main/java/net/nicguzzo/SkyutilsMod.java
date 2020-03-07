@@ -33,20 +33,20 @@ public class SkyutilsMod implements ModInitializer {
 
 	public static SkyutilsConfig config;
 
-	
-	public static final Hammer STONE_HAMMER   = new Hammer(ToolMaterials.STONE  , 6, -2.8F, (new Item.Settings()).group(ItemGroup.TOOLS));
-	public static final Hammer IRON_HAMMER    = new Hammer(ToolMaterials.IRON   , 6, -2.8F, (new Item.Settings()).group(ItemGroup.TOOLS));
-	public static final Hammer DIAMOND_HAMMER = new Hammer(ToolMaterials.DIAMOND, 6, -2.8F, (new Item.Settings()).group(ItemGroup.TOOLS));
-
+	public static final Identifier CHARCOAL_BLOCK_ID = new Identifier("skyutils", "charcoal_block");
+	public static final Block CHARCOAL_BLOCK = new Block(FabricBlockSettings.of(Material.STONE,MaterialColor.BLACK).strength(5.0F, 6.0F).build());
+	public static final BlockItem CHARCOAL_BLOCK_ITEM=new BlockItem(CHARCOAL_BLOCK, new Item.Settings().group(ItemGroup.MISC));
+	public static final Item DIAMOND_NUGGET = new Item(new Item.Settings().group(ItemGroup.MISC));
 	public static final Item WOODCHIPS = new Item(new Item.Settings().group(ItemGroup.MISC));
 	public static final Item RAW_CRUCIBLE = new Item(new Item.Settings().group(ItemGroup.MISC));
 	public static final Crucible CRUCIBLE  = new Crucible(Fluids.EMPTY,new Item.Settings().group(ItemGroup.MISC));
 	public static final Crucible WATER_CRUCIBLE  = new Crucible(Fluids.WATER,new Item.Settings().group(ItemGroup.MISC).maxCount(1));
 	public static final Crucible LAVA_CRUCIBLE   = new Crucible(Fluids.LAVA,new Item.Settings().group(ItemGroup.MISC).maxCount(1));
 	
-	public static final Identifier CHARCOAL_BLOCK_ID = new Identifier("skyutils", "charcoal_block");
-	public static final Block CHARCOAL_BLOCK = new Block(FabricBlockSettings.of(Material.STONE,MaterialColor.BLACK).strength(5.0F, 6.0F).build());
-	public static final BlockItem CHARCOAL_BLOCK_ITEM=new BlockItem(CHARCOAL_BLOCK, new Item.Settings().group(ItemGroup.MISC));
+	public static final Hammer STONE_HAMMER   = new Hammer(ToolMaterials.STONE  , 6, -2.8F, (new Item.Settings()).group(ItemGroup.TOOLS));
+	public static final Hammer IRON_HAMMER    = new Hammer(ToolMaterials.IRON   , 6, -2.8F, (new Item.Settings()).group(ItemGroup.TOOLS));
+	public static final Hammer DIAMOND_HAMMER = new Hammer(ToolMaterials.DIAMOND, 6, -2.8F, (new Item.Settings()).group(ItemGroup.TOOLS));
+
 	
 	public static final Identifier KILN = new Identifier("skyutils", "kiln");
 	public static final Block KILN_BLOCK = new KilnBlock(FabricBlockSettings.of(Material.STONE).strength(3.5F,3.5F).build());
@@ -68,6 +68,7 @@ public class SkyutilsMod implements ModInitializer {
 		Registry.register(Registry.ITEM, new Identifier("skyutils", "crucible"), CRUCIBLE);
 		Registry.register(Registry.ITEM, new Identifier("skyutils", "water_crucible"), WATER_CRUCIBLE);
 		Registry.register(Registry.ITEM, new Identifier("skyutils", "lava_crucible"), LAVA_CRUCIBLE);
+		Registry.register(Registry.ITEM, new Identifier("skyutils", "diamond_nugget"), DIAMOND_NUGGET);
 
 		//blocks
 		Registry.register(Registry.BLOCK, CHARCOAL_BLOCK_ID, CHARCOAL_BLOCK);

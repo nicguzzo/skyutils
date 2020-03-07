@@ -20,7 +20,7 @@ public class KilnContainer extends Container {
         super(null, syncId); // Since we didn't create a ContainerType, we will place null here.
         this.inventory = inventory;
         checkContainerSize(inventory, INVENTORY_SIZE);
-        checkContainerDataCount(pd, 1);
+        //checkContainerDataCount(pd, 3);
         this.propertyDelegate = pd;
         inventory.onInvOpen(playerInventory.player);
         
@@ -45,9 +45,16 @@ public class KilnContainer extends Container {
         return this.inventory.canPlayerUseInv(player);
     }
     @Environment(EnvType.CLIENT)
-    public int getProgress() {
+    public int getBurnTime() {
         return this.propertyDelegate.get(0);
-        //return (int)(100-(this.propertyDelegate.get(0)/(float)KilnBlockEntity.BURN_TIME)*100);
+    }
+    @Environment(EnvType.CLIENT)
+    public int getProgress() {
+        return this.propertyDelegate.get(2);
+    }
+    @Environment(EnvType.CLIENT)
+    public int getCoocktime() {
+        return this.propertyDelegate.get(1);        
     }
     
  

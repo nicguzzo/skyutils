@@ -18,6 +18,9 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
+
 
 public class  Hammer extends MiningToolItem
 {
@@ -34,7 +37,8 @@ public class  Hammer extends MiningToolItem
             block == Blocks.OAK_LOG ||
             block == Blocks.SPRUCE_LOG||
             block == Blocks.DARK_OAK_LOG||
-            block == Blocks.JUNGLE_LOG
+            block == Blocks.JUNGLE_LOG||
+            block == SkyutilsMod.CHARCOAL_BLOCK
         ) {
             return true;
         }
@@ -55,7 +59,23 @@ public class  Hammer extends MiningToolItem
             stack=new ItemStack(Items.CLAY_BALL);
         }else if(path.contains("_log")){
             stack=new ItemStack(SkyutilsMod.WOODCHIPS);
-        }
+        }else if(path.contains("charcoal_block")){
+            float chance=0.05f;
+            if(!player.inventory.main.isEmpty()){
+                ItemStack tool=player.inventory.main.get(0);
+                int i = EnchantmentHelper.getLevel(Enchantments.FORTUNE, tool);
+                switch(i){
+                    case 1: chance*=2.0f; break;
+                    case 2: chance*=3.0f; break;
+                    case 3: chance*=4.0f; break;
+                }
+            }
+            if(world.random.nextFloat()<chance){
+                stack=new ItemStack(SkyutilsMod.DIAMOND_NUGGET);
+            }else{
+                stack=new ItemStack(Items.CHARCOAL,8);
+            }
+        }        
         if(stack!=null){
             player.incrementStat(Stats.MINED.getOrCreateStat(state.getBlock() ));
             player.addExhaustion(0.005F);
@@ -71,6 +91,6 @@ public class  Hammer extends MiningToolItem
       Blocks.OAK_LOG ,
       Blocks.SPRUCE_LOG,
       Blocks.DARK_OAK_LOG,
-      Blocks.JUNGLE_LOG);
+      Blocks.JUNGLE_LOG,SkyutilsMod.CHARCOAL_BLOCK);
    }
 }
