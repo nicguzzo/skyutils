@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+      "###",
+      "/B/",
+      "/ /"
+  ],
+  "key": {
+      "#": {
+          "item": "minecraft:paper"
+      },
+      "/": {
+          "item": "minecraft:stick"
+      },
+      "B": {
+        "item": "minecraft:bowl"
+    }
+  },
+  "result": {
+    "item": "skyutils:condenser",
+        "count": 1
+  }
+}

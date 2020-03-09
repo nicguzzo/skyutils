@@ -25,10 +25,10 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
     private static final int INVENTORY_SIZE = 4;
     public static final int CHARCOAL_BURN_TIME =  1000;
     public static final int COBBLESTONE_COOK_TIME = 8000;
+    public static final int COBBLESTONE_COST = 8;
     public static final int RAW_CRUCIBLE_COOK_TIME = 2000;
     protected final PropertyDelegate propertyDelegate;
     
-    private boolean cooking = false;
 
     public KilnBlockEntity() {
         super(SkyutilsMod.KILN_ENTITY_TYPE);
@@ -125,19 +125,17 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
 
             if (out.isEmpty()) {
                 if (!crucible.isEmpty()) {
-                    if (!item.isEmpty() && item.getItem() == Items.COBBLESTONE && item.getCount() == 64) {
-                        this.cooking = cook(item, fuel, crucible, COBBLESTONE_COOK_TIME, 64,
+                    if (!item.isEmpty() && item.getItem() == Items.COBBLESTONE && item.getCount() == COBBLESTONE_COST) {
+                         cook(item, fuel, crucible, COBBLESTONE_COOK_TIME, COBBLESTONE_COST,
                                 (Item) SkyutilsMod.LAVA_CRUCIBLE);
                     } else {
-                        this.cooking = false;
                         this.cook_time = 0;
                         this.progress = 0;
                     }
                 } else {
                     if (!item.isEmpty() && item.getItem() == SkyutilsMod.RAW_CRUCIBLE) {
-                        this.cooking = cook(item, fuel, crucible, RAW_CRUCIBLE_COOK_TIME, 1, SkyutilsMod.CRUCIBLE);
+                         cook(item, fuel, crucible, RAW_CRUCIBLE_COOK_TIME, 1, SkyutilsMod.CRUCIBLE);
                     } else {
-                        this.cooking = false;
                         this.cook_time = 0;
                         this.progress = 0;
                     }
