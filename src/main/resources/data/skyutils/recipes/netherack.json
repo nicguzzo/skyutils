@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+      "###",
+      "#B#",
+      "###"
+  ],
+  "key": {
+      "#": {
+          "item": "minecraft:gravel"
+      },
+      "B": {
+          "item": "minecraft:blaze_powder"
+      }
+  },
+  "result": {
+      "item": "minecraft:netherrack",
+      "count": 8
+  }
+}

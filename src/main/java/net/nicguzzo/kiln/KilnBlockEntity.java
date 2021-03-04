@@ -24,9 +24,9 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
     private int progress = 0;
     private static final int INVENTORY_SIZE = 4;
     public static final int CHARCOAL_BURN_TIME =  1000;
-    public static final int COBBLESTONE_COOK_TIME = 8000;
-    public static final int COBBLESTONE_COST = 8;
-    public static final int RAW_CRUCIBLE_COOK_TIME = 2000;
+    public static final int COBBLESTONE_COOK_TIME = 1000;
+    public static final int COBBLESTONE_COST = 16;
+    public static final int RAW_CRUCIBLE_COOK_TIME = 1000;
     protected final PropertyDelegate propertyDelegate;
     
 
@@ -125,7 +125,7 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
 
             if (out.isEmpty()) {
                 if (!crucible.isEmpty()) {
-                    if (!item.isEmpty() && item.getItem() == Items.COBBLESTONE && item.getCount() == COBBLESTONE_COST) {
+                    if (!item.isEmpty() && item.getItem() == Items.COBBLESTONE && item.getCount() >= COBBLESTONE_COST) {
                          cook(item, fuel, crucible, COBBLESTONE_COOK_TIME, COBBLESTONE_COST,
                                 (Item) SkyutilsMod.LAVA_CRUCIBLE);
                     } else {

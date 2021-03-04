@@ -1,8 +1,45 @@
 {
   "variants": {
-    "facing=north": { "model": "skyutils:block/condenser" },
-    "facing=east":  { "model": "skyutils:block/condenser", "y":  90},
-    "facing=south": { "model": "skyutils:block/condenser", "y": 180 },
-    "facing=west":  { "model": "skyutils:block/condenser", "y": 270 }
+    "level=0,facing=north": { "model": "skyutils:block/condenser" },
+    "level=0,facing=east":  { "model": "skyutils:block/condenser", "y":  90},
+    "level=0,facing=south": { "model": "skyutils:block/condenser", "y": 180 },
+    "level=0,facing=west":  { "model": "skyutils:block/condenser", "y": 270 },
+
+    "level=1,facing=north": { "model": "skyutils:block/condenser_level1" },
+    "level=1,facing=east":  { "model": "skyutils:block/condenser_level1", "y":  90},
+    "level=1,facing=south": { "model": "skyutils:block/condenser_level1", "y": 180 },
+    "level=1,facing=west":  { "model": "skyutils:block/condenser_level1", "y": 270 },
+    
+    "level=2,facing=north": { "model": "skyutils:block/condenser_level2" },
+    "level=2,facing=east":  { "model": "skyutils:block/condenser_level2", "y":  90},
+    "level=2,facing=south": { "model": "skyutils:block/condenser_level2", "y": 180 },
+    "level=2,facing=west":  { "model": "skyutils:block/condenser_level2", "y": 270 },
+
+    "level=3,facing=north": { "model": "skyutils:block/condenser_level3" },
+    "level=3,facing=east":  { "model": "skyutils:block/condenser_level3", "y":  90},
+    "level=3,facing=south": { "model": "skyutils:block/condenser_level3", "y": 180 },
+    "level=3,facing=west":  { "model": "skyutils:block/condenser_level3", "y": 270 },
+
+    "level=4,facing=north": { "model": "skyutils:block/condenser_level4" },
+    "level=4,facing=east":  { "model": "skyutils:block/condenser_level4", "y":  90},
+    "level=4,facing=south": { "model": "skyutils:block/condenser_level4", "y": 180 },
+    "level=4,facing=west":  { "model": "skyutils:block/condenser_level4", "y": 270 },
+
+    "level=5,facing=north": { "model": "skyutils:block/condenser_level5" },
+    "level=5,facing=east":  { "model": "skyutils:block/condenser_level5", "y":  90},
+    "level=5,facing=south": { "model": "skyutils:block/condenser_level5", "y": 180 },
+    "level=5,facing=west":  { "model": "skyutils:block/condenser_level5", "y": 270 },
+
+    "level=6,facing=north": { "model": "skyutils:block/condenser_level6" },
+    "level=6,facing=east":  { "model": "skyutils:block/condenser_level6", "y":  90},
+    "level=6,facing=south": { "model": "skyutils:block/condenser_level6", "y": 180 },
+    "level=6,facing=west":  { "model": "skyutils:block/condenser_level6", "y": 270 },
+
+    "level=7,facing=north": { "model": "skyutils:block/condenser_level7" },
+    "level=7,facing=east":  { "model": "skyutils:block/condenser_level7", "y":  90},
+    "level=7,facing=south": { "model": "skyutils:block/condenser_level7", "y": 180 },
+    "level=7,facing=west":  { "model": "skyutils:block/condenser_level7", "y": 270 }
+    
+    
   }
 }

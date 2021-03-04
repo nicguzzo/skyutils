@@ -61,12 +61,12 @@ public class KilnContainer extends Container {
     // Shift + Player Inv Slot
     public ItemStack transferSlot(PlayerEntity player, int invSlot) {
         ItemStack newStack = ItemStack.EMPTY;
-        Slot slot = this.slotList.get(invSlot);
+        Slot slot = this.slots.get(invSlot);
         if (slot != null && slot.hasStack()) {
             ItemStack originalStack = slot.getStack();
             newStack = originalStack.copy();
             if (invSlot < this.inventory.getInvSize()) {
-                if (!this.insertItem(originalStack, this.inventory.getInvSize(), this.slotList.size(), true)) {
+                if (!this.insertItem(originalStack, this.inventory.getInvSize(), this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else if (!this.insertItem(originalStack, 0, this.inventory.getInvSize(), false)) {

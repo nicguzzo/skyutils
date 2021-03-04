@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+      "###",
+      "#M#",
+      "###"
+  ],
+  "key": {
+      "#": {
+          "item": "minecraft:podzol"
+      },
+      "M": {
+          "item": "minecraft:mushroom_stew"
+      }
+  },
+  "result": {
+      "item": "minecraft:mycelium",
+      "count": 1
+  }
+}

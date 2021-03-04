@@ -1,12 +1,13 @@
 package net.nicguzzo.kiln;
 
-import net.minecraft.client.gui.screen.ingame.AbstractContainerScreen;
+
+import net.minecraft.client.gui.screen.ingame.ContainerScreen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-public class KilnScreen  extends AbstractContainerScreen<KilnContainer>{
+public class KilnScreen  extends ContainerScreen<KilnContainer>{
      
     private static final Identifier TEXTURE = new Identifier("skyutils","textures/gui/container/kiln.png");
  

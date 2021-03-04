@@ -13,5 +13,6 @@
     "block.skyutils.kiln":      "Kiln",
     "block.skyutils.charcoal_block":      "Charcoal Block",
     "block.skyutils.condenser":      "Condenser",
-    "container.skyutils.kiln":      "Kiln"
+    "container.skyutils.kiln":      "Kiln",
+    "generator.skyblock": "SkyBlock"
   }
