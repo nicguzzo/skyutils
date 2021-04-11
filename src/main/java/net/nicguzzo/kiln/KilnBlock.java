@@ -7,12 +7,13 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.container.Container;
+
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.screen.ScreenHandler;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.util.ActionResult;
@@ -26,7 +27,6 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.nicguzzo.SkyutilsMod;
-
 
 public class KilnBlock extends BlockWithEntity {
 
@@ -66,8 +66,8 @@ public class KilnBlock extends BlockWithEntity {
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof KilnBlockEntity) {
                 System.out.println("open!");
-                 ContainerProviderRegistry.INSTANCE.openContainer(SkyutilsMod.KILN,
-                 player, buf -> buf.writeBlockPos(pos));
+                ContainerProviderRegistry.INSTANCE.openContainer(SkyutilsMod.KILN, player,
+                        buf -> buf.writeBlockPos(pos));
             }
         }
         return ActionResult.SUCCESS;
@@ -75,14 +75,16 @@ public class KilnBlock extends BlockWithEntity {
 
     // Scatter the items in the chest when it is removed.
     @Override
-    public void onBlockRemoved(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (state.getBlock() != newState.getBlock()) {
+    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+        // if (state.getBlock() != newState.getBlock())
+        {
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof KilnBlockEntity) {
                 ItemScatterer.spawn(world, (BlockPos) pos, (Inventory) ((KilnBlockEntity) blockEntity));
-                world.updateHorizontalAdjacent(pos, this);
+                // world.updateHorizontalAdjacent(pos, this);
+                world.updateNeighbors(pos, this);
             }
-            super.onBlockRemoved(state, world, pos, newState, moved);
+            super.onBreak(world, pos, state, player);
         }
     }
 
@@ -93,21 +95,24 @@ public class KilnBlock extends BlockWithEntity {
 
     @Override
     public int getComparatorOutput(BlockState state, World world, BlockPos pos) {
-        return Container.calculateComparatorOutput(world.getBlockEntity(pos));
+        return ScreenHandler.calculateComparatorOutput(world.getBlockEntity(pos));
     }
 
     @Override
     public BlockState getPlacementState(ItemPlacementContext ctx) {
         return (BlockState) this.getDefaultState().with(FACING, ctx.getPlayerFacing().getOpposite());
     }
+
     @Override
     public BlockState rotate(BlockState state, BlockRotation rotation) {
         return (BlockState) state.with(FACING, rotation.rotate((Direction) state.get(FACING)));
     }
+
     @Override
     public BlockState mirror(BlockState state, BlockMirror mirror) {
         return state.rotate(mirror.getRotation((Direction) state.get(FACING)));
     }
+
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
         builder.add(FACING);
