@@ -3,9 +3,9 @@ package net.nicguzzo;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.FluidDrainable;
 import net.minecraft.block.HorizontalFacingBlock;
+import net.minecraft.block.Material;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
@@ -29,9 +29,8 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
     public static final IntProperty LEVEL = IntProperty.of("level", 0, 7);
 
     public CondenserBlock() {
-        super(Settings.copy(Blocks.OAK_LOG).nonOpaque());
-        setDefaultState(
-                this.stateManager.getDefaultState().with(Properties.HORIZONTAL_FACING, Direction.NORTH).with(LEVEL, 0));
+        super(Settings.of(Material.WOOD).nonOpaque());
+        setDefaultState(this.stateManager.getDefaultState().with(Properties.HORIZONTAL_FACING, Direction.NORTH).with(LEVEL, 0));
     }
 
     @Override

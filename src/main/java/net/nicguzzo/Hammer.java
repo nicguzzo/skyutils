@@ -36,6 +36,7 @@ public class Hammer extends MiningToolItem {
             Items.COCOA_BEANS,
             Items.SWEET_BERRIES,
             Items.BAMBOO,
+            Items.SUGAR_CANE
             };
 
     public Hammer(ToolMaterial material, int attackDamage, float attackSpeed, Item.Settings settings) {
@@ -77,7 +78,11 @@ public class Hammer extends MiningToolItem {
         } else if (path.equals("sand")) {
             stack = new ItemStack(Items.CLAY_BALL, (int) chance+4);
             if (world.random.nextFloat() < 0.1* chance) {
-                stack2 = new ItemStack(Items.CACTUS, 1);                
+                if (world.random.nextFloat() < 0.5) {
+                    stack2 = new ItemStack(Items.CACTUS, 1);
+                }else{
+                    stack2 = new ItemStack(Items.KELP, 1);                
+                }
             }            
         } else if (path.contains("_log")) {
             stack = new ItemStack(SkyutilsMod.WOODCHIPS, (int) chance);
@@ -95,7 +100,7 @@ public class Hammer extends MiningToolItem {
         } else if (path.equals("grass_block")) {
             stack = new ItemStack(SkyutilsMod.PEBBLE, (int) chance + 3);
             if (world.random.nextFloat() < 0.2* chance) {
-                int r=(int) (world.random.nextFloat()*(DIRT_DROPS.length-1));
+                int r=(int) Math.ceil(world.random.nextFloat()*(DIRT_DROPS.length-1));
                 if (r >= 0 && r < DIRT_DROPS.length) {
                     stack2 = new ItemStack(DIRT_DROPS[r], 1);
                 }               
@@ -118,6 +123,9 @@ public class Hammer extends MiningToolItem {
         } else if (path.equals("netherrack")) {
             if (world.random.nextFloat() < 0.1f * chance) {
                 stack = new ItemStack(Items.NETHER_WART, 1);
+            }
+            if (world.random.nextFloat() < 0.01*chance) {                
+                stack2 = new ItemStack(Items.NETHERITE_SCRAP, 1);                
             }
         }
         

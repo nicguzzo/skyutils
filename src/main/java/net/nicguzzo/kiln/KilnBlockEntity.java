@@ -1,9 +1,8 @@
 package net.nicguzzo.kiln;
 
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
-import net.minecraft.container.Container;
-import net.minecraft.container.PropertyDelegate;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
@@ -11,13 +10,15 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.screen.PropertyDelegate;
+import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
-import net.minecraft.util.DefaultedList;
 import net.minecraft.util.Tickable;
+import net.minecraft.util.collection.DefaultedList;
 import net.nicguzzo.SkyutilsMod;
 
-public class KilnBlockEntity extends LootableContainerBlockEntity implements BlockEntityClientSerializable, Tickable {
+public class KilnBlockEntity extends LootableContainerBlockEntity implements  BlockEntityClientSerializable, Tickable {
     private DefaultedList<ItemStack> inventory;
     private int burn_time = 0;
     private int cook_time = 0;
@@ -27,54 +28,59 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
     public static final int COBBLESTONE_COOK_TIME = 1000;
     public static final int COBBLESTONE_COST = 16;
     public static final int RAW_CRUCIBLE_COOK_TIME = 1000;
-    protected final PropertyDelegate propertyDelegate;
+    protected final PropertyDelegate propertyDelegate= new PropertyDelegate() {
+        @Override
+        public int get(int key) {
+            switch (key) {
+                case 0:
+                    return KilnBlockEntity.this.burn_time;
+                case 1:
+                    return KilnBlockEntity.this.cook_time;
+                case 2:
+                    return KilnBlockEntity.this.progress;
+                default:
+                    return 0;
+            }
+        }
+
+        public void set(int key, int value) {
+            switch (key) {
+                case 0:
+                    KilnBlockEntity.this.burn_time = value;
+                    break;
+                case 1:
+                    KilnBlockEntity.this.cook_time = value;
+                    break;
+                case 2:
+                    KilnBlockEntity.this.progress = value;
+                    break;
+            }
+        }
+
+        public int size() {
+            return 3;
+        }
+    };
+
     
 
     public KilnBlockEntity() {
         super(SkyutilsMod.KILN_ENTITY_TYPE);
         this.inventory = DefaultedList.ofSize(INVENTORY_SIZE, ItemStack.EMPTY);
-        this.propertyDelegate = new PropertyDelegate() {
-            public int get(int key) {
-                switch (key) {
-                    case 0:
-                        return KilnBlockEntity.this.burn_time;
-                    case 1:
-                        return KilnBlockEntity.this.cook_time;
-                    case 2:
-                        return KilnBlockEntity.this.progress;
-                    default:
-                        return 0;
-                }
-            }
-
-            public void set(int key, int value) {
-                switch (key) {
-                    case 0:
-                        KilnBlockEntity.this.burn_time = value;
-                        break;
-                    case 1:
-                        KilnBlockEntity.this.cook_time = value;
-                        break;
-                    case 2:
-                        KilnBlockEntity.this.progress = value;
-                        break;
-                }
-            }
-
-            public int size() {
-                return 1;
-            }
-        };
-    }
-
+        //this.propertyDelegate 
+    };
+    /*@Override
+    public Text getDisplayName() {
+        return new TranslatableText(getCachedState().getBlock().getTranslationKey());
+    }*/
     @Override
     protected Text getContainerName() {
         return new TranslatableText("container.kiln");
     }
 
     @Override
-    public Container createContainer(int syncId, PlayerInventory playerInventory) {
-        return new KilnContainer(syncId, playerInventory, (Inventory) this, this.propertyDelegate);
+    public ScreenHandler createScreenHandler(int syncId, PlayerInventory playerInventory) {
+        return new KilnScreenHandler(syncId, playerInventory, (Inventory) this, this.propertyDelegate);
     }
 
     @Override
@@ -88,14 +94,14 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
     }
 
     @Override
-    public int getInvSize() {
+    public int size() {
         return INVENTORY_SIZE;
     }
 
     @Override
-    public void fromTag(CompoundTag tag) {
-        super.fromTag(tag);
-        this.inventory = DefaultedList.ofSize(this.getInvSize(), ItemStack.EMPTY);
+    public void fromTag(BlockState state,CompoundTag tag) {
+        super.fromTag(state,tag);
+        this.inventory = DefaultedList.ofSize(this.size(), ItemStack.EMPTY);
         Inventories.fromTag(tag, this.inventory);
         this.burn_time = tag.getInt("burn_time");
         this.cook_time = tag.getInt("cook_time");
@@ -148,8 +154,8 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
     }
 
     @Override
-    public void fromClientTag(CompoundTag tag) {
-        this.fromTag(tag);
+    public void fromClientTag(CompoundTag tag) {        
+        this.fromTag(this.getCachedState(),tag);
     }
 
     @Override

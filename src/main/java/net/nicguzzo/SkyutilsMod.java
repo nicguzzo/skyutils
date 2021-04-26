@@ -4,66 +4,42 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.container.ContainerProviderRegistry;
+import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
 import net.minecraft.block.MaterialColor;
-import net.minecraft.block.Block.Settings;
-import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.AbstractBlock.Settings;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.client.world.GeneratorType;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ToolMaterials;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.PackedIntegerArray;
-import net.minecraft.util.Util;
+//import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.ProtoChunk;
-import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.level.LevelGeneratorType;
-import net.minecraft.server.world.ServerLightingProvider;
-
-import net.minecraft.world.ChunkRegion;
-
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biomes;
+import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
-import net.minecraft.world.biome.source.BiomeSourceType;
 import net.minecraft.world.biome.source.VanillaLayeredBiomeSource;
-import net.minecraft.world.biome.source.VanillaLayeredBiomeSourceConfig;
-import net.minecraft.world.gen.chunk.CavesChunkGenerator;
-import net.minecraft.world.gen.chunk.CavesChunkGeneratorConfig;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.world.gen.chunk.ChunkGeneratorConfig;
-import net.minecraft.world.gen.chunk.ChunkGeneratorType;
-import net.minecraft.world.gen.chunk.OverworldChunkGenerator;
-import net.minecraft.world.gen.chunk.OverworldChunkGeneratorConfig;
-
-//import net.nicguzzo.condenser.CondenserBlock;
-//import net.nicguzzo.condenser.CondenserEntity;
+import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
 import net.nicguzzo.kiln.KilnBlock;
 import net.nicguzzo.kiln.KilnBlockEntity;
+import net.nicguzzo.kiln.KilnScreenHandler;
+import net.nicguzzo.mixin.GeneratorTypeAccessor;
 
 public class SkyutilsMod implements ModInitializer {
 
-	public static LevelGeneratorType SKB_LEVEL_GENERATOR_TYPE;
+	//public static LevelGeneratorType SKB_LEVEL_GENERATOR_TYPE;
 	public static SkyutilsConfig config;
 
 	public static final Identifier KILN               = new Identifier("skyutils", "kiln");
@@ -86,13 +62,17 @@ public class SkyutilsMod implements ModInitializer {
 	public static final Hammer DIAMOND_HAMMER = new Hammer(ToolMaterials.DIAMOND, 6, -2.8F,(new Item.Settings()).group(ItemGroup.TOOLS));
 
 	//KILN
-	public static final Block KILN_BLOCK = new KilnBlock(Settings.of(Material.STONE).strength(3.5F, 3.5F));
-	public static final String KILN_BLOCK_TRANSLATION_KEY = Util.createTranslationKey("container", KILN);
+	
 	public static BlockEntityType<KilnBlockEntity> KILN_ENTITY_TYPE;
-
+	
+	public static final Block KILN_BLOCK = new KilnBlock(Settings.of(Material.STONE).strength(3.5F, 3.5F));
+	public static final BlockEntityType<KilnBlockEntity> KILN_ENTITY =BlockEntityType.Builder.create(KilnBlockEntity::new, KILN_BLOCK).build(null);
+	public static final BlockItem KILN_BLOCK_ITEM =new BlockItem(KILN_BLOCK, new Item.Settings().group(ItemGroup.REDSTONE));
+	public static final ScreenHandlerType<KilnScreenHandler> KILN_SCREEN_HANDLER= ScreenHandlerRegistry.registerSimple(KILN, KilnScreenHandler::new);
+	
 	//CONDENSER
 	public static final Block CONDENSER_BLOCK = new CondenserBlock();
-	public static BlockEntityType<CondenserEntity> CONDENSER_ENTITY;		
+	public static BlockEntityType<CondenserEntity> CONDENSER_ENTITY=BlockEntityType.Builder.create(CondenserEntity::new, CONDENSER_BLOCK).build(null);		
 	public static final BlockItem CONDENSER_BLOCK_ITEM = new BlockItem(CONDENSER_BLOCK,new Item.Settings().group(ItemGroup.MISC));
 
 	public static BlockPos spwn;
@@ -122,23 +102,28 @@ public class SkyutilsMod implements ModInitializer {
 
 		//kiln
 		Registry.register(Registry.BLOCK, KILN, KILN_BLOCK);
-		Registry.register(Registry.ITEM, KILN, new BlockItem(KILN_BLOCK, new Item.Settings().group(ItemGroup.REDSTONE)));
-		KILN_ENTITY_TYPE = Registry.register(Registry.BLOCK_ENTITY_TYPE, KILN,BlockEntityType.Builder.create(KilnBlockEntity::new, KILN_BLOCK).build(null));
-		
-		ContainerProviderRegistry.INSTANCE.registerFactory(KILN, (syncId, identifier, player, buf) -> {
-			final BlockEntity blockEntity = player.world.getBlockEntity(buf.readBlockPos());
-			return ((KilnBlockEntity) blockEntity).createContainer(syncId, player.inventory);
-		});
-		
+		Registry.register(Registry.ITEM,  KILN, KILN_BLOCK_ITEM);		
+		KILN_ENTITY_TYPE = Registry.register(Registry.BLOCK_ENTITY_TYPE, KILN,KILN_ENTITY);
+				
 		//condenser
 		Registry.register(Registry.BLOCK, CONDENSER, CONDENSER_BLOCK);
 		Registry.register(Registry.ITEM,  CONDENSER, CONDENSER_BLOCK_ITEM);
-		CONDENSER_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CONDENSER, BlockEntityType.Builder.create(CondenserEntity::new, CONDENSER_BLOCK).build(null));
+		CONDENSER_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CONDENSER, CONDENSER_ENTITY);
+		GeneratorTypeAccessor.getValues().add(SKYBLOCK);
+        Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils","skyblock_island"), SkyblockChunkGenerator.CODEC);
+		Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils","skyblock_island_nether"), SkyblockNetherChunkGenerator.CODEC);
 
 	}
+	public static final GeneratorType SKYBLOCK = new GeneratorType("skyblock_island") {
+        protected ChunkGenerator getChunkGenerator(Registry<Biome> biomeRegistry,Registry<ChunkGeneratorSettings> chunkGeneratorSettingsRegistry, long seed) {
+            BiomeSource bs = new VanillaLayeredBiomeSource(seed, false, false, biomeRegistry);
+            return new SkyblockChunkGenerator(bs, seed, () -> chunkGeneratorSettingsRegistry.get(ChunkGeneratorSettings.FLOATING_ISLANDS));
+            
+        }
+    };
 
 	private void load_config() {
-		File configFile = new File(FabricLoader.getInstance().getConfigDirectory(), "skyutils.json");
+		File configFile = new File(FabricLoader.getInstance().getConfigDir().toString(), "skyutils.json");
 		try (FileReader reader = new FileReader(configFile)) {
 			config = new Gson().fromJson(reader, SkyutilsConfig.class);
 			try (FileWriter writer = new FileWriter(configFile)) {
@@ -158,8 +143,8 @@ public class SkyutilsMod implements ModInitializer {
 			}
 		}
 	}
-
-	private static void deleteBlocks(ProtoChunk chunk, IWorld world) {
+/*
+	private static void deleteBlocks(ProtoChunk chunk, WorldAccess world) {
 		ChunkSection[] sections = chunk.getSectionArray();
 		for (int i = 0; i < sections.length; i++) {
 				sections[i] = WorldChunk.EMPTY_SECTION;
@@ -176,7 +161,7 @@ public class SkyutilsMod implements ModInitializer {
 		Heightmap.populateHeightmaps(chunk, EnumSet.allOf(Heightmap.Type.class));
 	}
 
-	private static void clearChunk(ProtoChunk chunk, IWorld world) {
+	private static void clearChunk(ProtoChunk chunk, WorldAccess world) {
 		deleteBlocks(chunk, world);
 		// erase entities
 		//chunk.getEntities().clear();
@@ -200,7 +185,7 @@ public class SkyutilsMod implements ModInitializer {
 	
 	public static class SkbGenerator extends OverworldChunkGenerator {
 
-		public SkbGenerator(IWorld world, BiomeSource biomeSource, OverworldChunkGeneratorConfig config) {
+		public SkbGenerator(WorldAccess world, BiomeSource biomeSource, OverworldChunkGeneratorConfig config) {
 			super(world, biomeSource, config);
 			
 			//world.getDimension().
@@ -209,9 +194,9 @@ public class SkyutilsMod implements ModInitializer {
 			int z=world.getLevelProperties().getSpawnZ();
 			SkyutilsMod.spwn = new BlockPos(x,y,z);
 			System.out.println("spawn point: " + SkyutilsMod.spwn);								
-			/*if(World.isValid(spw) && world.isAir(spw)){
-				world.setBlockState(spw, Blocks.GRASS_BLOCK.getDefaultState(), 2);			
-			}*/
+			//if(World.isValid(spw) && world.isAir(spw)){
+			//	world.setBlockState(spw, Blocks.GRASS_BLOCK.getDefaultState(), 2);			
+			//}
 		}
 
 		@Override
@@ -249,7 +234,7 @@ public class SkyutilsMod implements ModInitializer {
 		config.setDefaultBlock(Blocks.NETHERRACK.getDefaultState());
 		config.setDefaultFluid(Blocks.LAVA.getDefaultState());
 		return new CavesGenerator(world, BiomeSourceType.FIXED
-				.applyConfig((BiomeSourceType.FIXED.getConfig(world.getLevelProperties())).setBiome(Biomes.NETHER)), config);
-	}
+				.applyConfig((BiomeSourceType.FIXED.getConfig(world.getLevelProperties())).setBiome(BiomeKeys.NETHER_WASTES)), config);
+	}*/
 	
 }

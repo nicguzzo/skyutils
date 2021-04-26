@@ -2,27 +2,35 @@ package net.nicguzzo.kiln;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.container.Container;
-import net.minecraft.container.FurnaceOutputSlot;
-import net.minecraft.container.PropertyDelegate;
-import net.minecraft.container.Slot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.screen.ArrayPropertyDelegate;
+import net.minecraft.screen.PropertyDelegate;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.FurnaceOutputSlot;
+import net.minecraft.screen.slot.Slot;
+import net.nicguzzo.SkyutilsMod;
 
-public class KilnContainer extends Container {
+public class KilnScreenHandler extends ScreenHandler {
     private final Inventory inventory; 
     private static final int INVENTORY_SIZE = 4; 
-    private final PropertyDelegate propertyDelegate;
+    PropertyDelegate propertyDelegate;
+
+    public KilnScreenHandler(int syncId, PlayerInventory playerInventory) {
+        
+        this(syncId, playerInventory, new SimpleInventory(INVENTORY_SIZE),new ArrayPropertyDelegate(3));
+    }
  
-    protected KilnContainer(int syncId, PlayerInventory playerInventory, Inventory inventory,PropertyDelegate pd) {
-        super(null, syncId); // Since we didn't create a ContainerType, we will place null here.
+    protected KilnScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory,PropertyDelegate pd) {
+        super(SkyutilsMod.KILN_SCREEN_HANDLER, syncId); // Since we didn't create a ContainerType, we will place null here.
         this.inventory = inventory;
-        checkContainerSize(inventory, INVENTORY_SIZE);
+        checkSize(inventory, INVENTORY_SIZE);
         //checkContainerDataCount(pd, 3);
         this.propertyDelegate = pd;
-        inventory.onInvOpen(playerInventory.player);
+        inventory.onOpen(playerInventory.player);
         
         this.addSlot(new KilnInputSlot(inventory, 0, 56, 17));//input
         this.addSlot(new KilnCrucibleSlot(inventory, 1, 23, 17));//crucible
@@ -38,11 +46,12 @@ public class KilnContainer extends Container {
         for(k = 0; k < 9; ++k) {
             this.addSlot(new Slot(playerInventory, k, 8 + k * 18, 142));
         }
+        this.addProperties(propertyDelegate);
     }
  
     @Override
     public boolean canUse(PlayerEntity player) {
-        return this.inventory.canPlayerUseInv(player);
+        return this.inventory.canPlayerUse(player);
     }
     @Environment(EnvType.CLIENT)
     public int getBurnTime() {
@@ -65,11 +74,11 @@ public class KilnContainer extends Container {
         if (slot != null && slot.hasStack()) {
             ItemStack originalStack = slot.getStack();
             newStack = originalStack.copy();
-            if (invSlot < this.inventory.getInvSize()) {
-                if (!this.insertItem(originalStack, this.inventory.getInvSize(), this.slots.size(), true)) {
+            if (invSlot < this.inventory.size()) {
+                if (!this.insertItem(originalStack, this.inventory.size(), this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!this.insertItem(originalStack, 0, this.inventory.getInvSize(), false)) {
+            } else if (!this.insertItem(originalStack, 0, this.inventory.size(), false)) {
                 return ItemStack.EMPTY;
             }
  

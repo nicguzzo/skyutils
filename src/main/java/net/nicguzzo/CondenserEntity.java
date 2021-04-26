@@ -46,7 +46,7 @@ public class CondenserEntity extends BlockEntity implements BlockEntityClientSer
 
     @Override
     public void fromTag(BlockState state, CompoundTag tag) {
-        super.fromTag(this.getCachedState(), tag);
+        super.fromTag(state, tag);
         System.out.println("fromTag");
         time = tag.getInt("number");
         level = tag.getInt("level");
@@ -54,7 +54,7 @@ public class CondenserEntity extends BlockEntity implements BlockEntityClientSer
 
     @Override
     public void fromClientTag(CompoundTag tag) {
-        this.fromTag(this.getCachedState(), tag);
+        this.fromTag(null, tag);
     }
 
     @Override
@@ -69,11 +69,13 @@ public class CondenserEntity extends BlockEntity implements BlockEntityClientSer
             Biome biome = this.world.getBiome(this.getPos());
             float temperature = biome.getTemperature(pos);
             boolean raining = this.world.isRaining();
+            
             if (temperature >= 0.95f) {
                 time_limit = time_limit * 2;
             }
             if (biome.getPrecipitation() == Biome.Precipitation.RAIN && raining) {
-                time_limit = (int) (time_limit * 0.1);
+                time_limit = (int) (time_limit * 0.05);
+                //System.out.println("time_limit " + time_limit);
             }
             int t = time_limit;
 
@@ -83,15 +85,17 @@ public class CondenserEntity extends BlockEntity implements BlockEntityClientSer
             CondenserBlock block = null;
             if (state.getBlock() instanceof CondenserBlock) {
                 block = (CondenserBlock) state.getBlock();
-                if (time < t) {
-                    time++;
-                    // System.out.println("condenser level " + level);
+                //System.out.println("condenser time " + time);
+                if (time > t) {
+                    time=0;
                     if (time % d == 0 && this.level < 7) {
                         level++;
                         block.incLevel(world, pos, state);
                         System.out.println("condenser level " + level);
                     }
                 }
+                time++;
+                
                 markDirty();
             }
         }

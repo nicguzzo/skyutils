@@ -1,6 +1,5 @@
 package net.nicguzzo.kiln;
 
-import net.fabricmc.fabric.api.container.ContainerProviderRegistry;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Block;
@@ -13,6 +12,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
@@ -26,7 +26,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
-import net.nicguzzo.SkyutilsMod;
 
 public class KilnBlock extends BlockWithEntity {
 
@@ -35,8 +34,7 @@ public class KilnBlock extends BlockWithEntity {
     // public static final BooleanProperty LIT;
     public KilnBlock(Settings settings) {
         super(settings);
-        this.setDefaultState((BlockState) ((BlockState) ((BlockState) this.stateManager.getDefaultState()).with(FACING,
-                Direction.NORTH)));
+        this.setDefaultState( (BlockState) (this.stateManager.getDefaultState().with(FACING, Direction.NORTH) ));
     }
 
     @Override
@@ -66,8 +64,15 @@ public class KilnBlock extends BlockWithEntity {
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof KilnBlockEntity) {
                 System.out.println("open!");
-                ContainerProviderRegistry.INSTANCE.openContainer(SkyutilsMod.KILN, player,
-                        buf -> buf.writeBlockPos(pos));
+
+                NamedScreenHandlerFactory screenHandlerFactory = state.createScreenHandlerFactory(world, pos);
+ 
+                if (screenHandlerFactory != null) {
+                    //With this call the server will request the client to open the appropriate Screenhandler
+                    player.openHandledScreen(screenHandlerFactory);
+                }
+                /*ContainerProviderRegistry.INSTANCE.openContainer(SkyutilsMod.KILN, player,
+                        buf -> buf.writeBlockPos(pos));*/
             }
         }
         return ActionResult.SUCCESS;

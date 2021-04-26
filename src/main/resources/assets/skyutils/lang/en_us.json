@@ -1,4 +1,6 @@
 {
+  
+    "item.skyutils.wooden_hammer":   "Wooden Hammer",
     "item.skyutils.stone_hammer":   "Stone Hammer",
     "item.skyutils.iron_hammer":    "Iron Hammer",
     "item.skyutils.diamond_hammer": "Diamond Hammer",
@@ -14,5 +16,5 @@
     "block.skyutils.charcoal_block":      "Charcoal Block",
     "block.skyutils.condenser":      "Condenser",
     "container.skyutils.kiln":      "Kiln",
-    "generator.skyblock": "SkyBlock"
+    "generator.skyblock_island": "SkyBlock Island"
   }

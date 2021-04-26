@@ -20,12 +20,12 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.IWorld;
+import net.minecraft.world.WorldAccess;
 
 @Mixin(ComposterBlock.class)
 public abstract class ComposterMixin {
 
-  private static boolean addToComposter(int level,BlockState state, IWorld world, BlockPos pos, ItemStack item){
+  private static boolean addToComposter(int level,BlockState state, WorldAccess world, BlockPos pos, ItemStack item){
 
     System.out.println("composter level: "+level);    
     int j = level + 1;
@@ -38,7 +38,7 @@ public abstract class ComposterMixin {
  }
 
   @Shadow
-  native protected static void emptyComposter(BlockState state, IWorld world, BlockPos pos);
+  native private static BlockState emptyComposter(BlockState state, WorldAccess world, BlockPos pos);
 
   @Inject(at = @At("HEAD"), method = "onUse", cancellable = true)
 
@@ -50,7 +50,7 @@ public abstract class ComposterMixin {
     if (i < 8 && ComposterBlock.ITEM_TO_LEVEL_INCREASE_CHANCE.containsKey(itemStack.getItem())) {
       if (i < 7 && !world.isClient) {
         boolean bl = ComposterMixin.addToComposter(i,state, world, pos, itemStack);
-        world.playLevelEvent(1500, pos, bl ? 1 : 0);
+        world.syncWorldEvent(1500, pos, bl ? 1 : 0);
         if (!player.abilities.creativeMode) {
           itemStack.decrement(1);
         }
