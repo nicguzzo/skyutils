@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import net.fabricmc.api.ModInitializer;
+
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
@@ -40,6 +41,7 @@ import net.nicguzzo.mixin.GeneratorTypeAccessor;
 public class SkyutilsMod implements ModInitializer {
 
 	//public static LevelGeneratorType SKB_LEVEL_GENERATOR_TYPE;
+	
 	public static SkyutilsConfig config;
 
 	public static final Identifier KILN               = new Identifier("skyutils", "kiln");
@@ -113,9 +115,13 @@ public class SkyutilsMod implements ModInitializer {
         Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils","skyblock_island"), SkyblockChunkGenerator.CODEC);
 		Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils","skyblock_island_nether"), SkyblockNetherChunkGenerator.CODEC);
 
+		
 	}
 	public static final GeneratorType SKYBLOCK = new GeneratorType("skyblock_island") {
         protected ChunkGenerator getChunkGenerator(Registry<Biome> biomeRegistry,Registry<ChunkGeneratorSettings> chunkGeneratorSettingsRegistry, long seed) {
+			//is_skyblock=true;
+			//System.out.println(" getChunkGenerator is skyblock? "+SkyutilsMod.is_skyblock);
+			
             BiomeSource bs = new VanillaLayeredBiomeSource(seed, false, false, biomeRegistry);
             return new SkyblockChunkGenerator(bs, seed, () -> chunkGeneratorSettingsRegistry.get(ChunkGeneratorSettings.FLOATING_ISLANDS));
             

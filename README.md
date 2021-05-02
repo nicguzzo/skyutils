@@ -1,2 +1,2 @@
-# Wands Mod
+# Sky Utils
 

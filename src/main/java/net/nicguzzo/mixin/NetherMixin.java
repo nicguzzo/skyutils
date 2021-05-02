@@ -22,14 +22,14 @@ public abstract class NetherMixin {
     @Inject(method = "createNetherGenerator", at = @At("HEAD"), cancellable = true)
     private static void createNetherGenerator(Registry<Biome> biomeRegistry, Registry<ChunkGeneratorSettings> chunkGeneratorSettingsRegistry, long seed,
     CallbackInfoReturnable<ChunkGenerator> cir) {
-        
-
-        BiomeSource bs=MultiNoiseBiomeSource.Preset.NETHER.getBiomeSource(biomeRegistry, seed);
-        //BiomeSource bs = new VanillaLayeredBiomeSource(seed, false, false, biomeRegistry);
-        SkyblockNetherChunkGenerator chunk_generator= new SkyblockNetherChunkGenerator(bs, seed, () -> {
-            return (ChunkGeneratorSettings)chunkGeneratorSettingsRegistry.getOrThrow(ChunkGeneratorSettings.NETHER);
-            });
-        cir.setReturnValue((ChunkGenerator)chunk_generator);
-            
+        //ChunkGenerator generator = world.getChunkManager().getChunkGenerator();
+        //System.out.println(" NetherMixin createNetherGenerator is skyblock? "+SkyutilsMod.is_skyblock);
+        {
+            BiomeSource bs=MultiNoiseBiomeSource.Preset.NETHER.getBiomeSource(biomeRegistry, seed);
+            SkyblockNetherChunkGenerator chunk_generator= new SkyblockNetherChunkGenerator(bs, seed, () -> {
+                return (ChunkGeneratorSettings)chunkGeneratorSettingsRegistry.getOrThrow(ChunkGeneratorSettings.NETHER);
+                });
+            cir.setReturnValue((ChunkGenerator)chunk_generator);
+        }   
     }
 }

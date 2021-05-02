@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "###",
+        "#N#",
+        "###"
+    ],
+    "key": {
+        "#": {
+            "item": "minecraft:dirt"
+        },
+        "N": {
+            "item": "minecraft:nether_wart_block"
+        }
+    },
+    "result": {
+        "item": "minecraft:soul_soil",
+        "count": 8
+    }
+}

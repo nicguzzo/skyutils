@@ -126,6 +126,14 @@ public class Hammer extends MiningToolItem {
             }
             if (world.random.nextFloat() < 0.01*chance) {                
                 stack2 = new ItemStack(Items.NETHERITE_SCRAP, 1);                
+            }else{
+                if (world.random.nextFloat() < 0.2f * chance) {
+                    if (world.random.nextFloat() < 0.5f * chance) {
+                        stack2 = new ItemStack(Items.CRIMSON_ROOTS, 1);
+                    }else{
+                        stack2 = new ItemStack(Items.WARPED_ROOTS, 1);
+                    }
+                }
             }
         }
         
