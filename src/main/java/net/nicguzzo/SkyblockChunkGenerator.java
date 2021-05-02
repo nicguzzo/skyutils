@@ -226,12 +226,12 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
 
     public void populateNoise(WorldAccess world, StructureAccessor accessor, Chunk chunk) {
         ChunkPos chunkPos = chunk.getPos();
-        if(chunkPos.x==4 && chunkPos.z ==14){
+        /*if(chunkPos.x==4 && chunkPos.z ==14){
             LOGGER.info("v1");
         }
         if(chunkPos.x==5 && chunkPos.z ==15){
             LOGGER.info("v2");
-        }
+        }*/
 
         if (first) {
             first = false;
@@ -364,23 +364,6 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         }
 
         boolean has_struct = has_village || has_swamp_hut;
-
-
-//boolean is_spawn=(x>chunkPos.getStartX() && x< chunkPos.getEndX() && z>chunkPos.getStartZ() && z< chunkPos.getEndZ());
-
-//boolean in_island=inside_radius(cshx,cshz)||inside_radius(cshx+15,cshz)||inside_radius(cshx,cshz+15)||inside_radius(cshx+15,cshz+15);
-
-/* if(has_swamp_hut || village!=null ){
-int i=60;
-for(int j = 0; j < 16; ++j) {
-for(int k = 0; k < 16; ++k) {
-chunk.setBlockState(mutable.set(j, i, k), glass, false);
-heightmap.trackUpdate(j, i, k, glass);
-heightmap2.trackUpdate(j, i, k, glass);
-}
-}
-}else if(inside_radius(cshx,cshz)||inside_radius(cehx,cshz)||inside_radius(cshx,cehz)||inside_radius(cehx,cehz)){
-*/
 
         if (has_struct || around||
                 inside_radius(spawn_cx,spawn_cz,cshx, cshz,rad2) ||
