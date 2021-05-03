@@ -4,15 +4,21 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import net.fabricmc.api.ModInitializer;
 
+import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
 import net.minecraft.block.MaterialColor;
 import net.minecraft.block.AbstractBlock.Settings;
@@ -27,12 +33,14 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
 //import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.BuiltinRegistries;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
 import net.minecraft.world.biome.source.VanillaLayeredBiomeSource;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
+import net.minecraft.world.gen.chunk.*;
+import net.minecraft.world.gen.feature.StructureFeature;
 import net.nicguzzo.kiln.KilnBlock;
 import net.nicguzzo.kiln.KilnBlockEntity;
 import net.nicguzzo.kiln.KilnScreenHandler;
@@ -79,6 +87,8 @@ public class SkyutilsMod implements ModInitializer {
 
 	public static BlockPos spwn;
 
+	public static RegistryKey<ChunkGeneratorSettings> SKYBLOCK_FLOATING_ISLANDS;
+
 	@Override
 	public void onInitialize() {
 
@@ -115,7 +125,34 @@ public class SkyutilsMod implements ModInitializer {
         Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils","skyblock_island"), SkyblockChunkGenerator.CODEC);
 		Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils","skyblock_island_nether"), SkyblockNetherChunkGenerator.CODEC);
 
-		
+		//SKYBLOCK_FLOATING_ISLANDS = RegistryKey.of(Registry.NOISE_SETTINGS_WORLDGEN, new Identifier("floating_islands"));
+		//createIslandSettings(new StructuresConfig(true), Blocks.STONE.getDefaultState(), Blocks.WATER.getDefaultState(), FLOATING_ISLANDS.getValue(), false, false)
+		/*Map<StructureFeature<?>, StructureConfig> DEFAULT_STRUCTURES= Maps.newHashMap();
+		DEFAULT_STRUCTURES.put(StructureFeature.VILLAGE, new StructureConfig(32, 8, 10387312));
+		DEFAULT_STRUCTURES.put(StructureFeature.DESERT_PYRAMID, new StructureConfig(32, 8, 14357617)) ;
+		DEFAULT_STRUCTURES.put(StructureFeature.IGLOO, new StructureConfig(32, 8, 14357618));
+		DEFAULT_STRUCTURES.put(StructureFeature.JUNGLE_PYRAMID, new StructureConfig(32, 8, 14357619));
+		DEFAULT_STRUCTURES.put(StructureFeature.SWAMP_HUT, new StructureConfig(32, 8, 14357620));
+		DEFAULT_STRUCTURES.put(StructureFeature.PILLAGER_OUTPOST, new StructureConfig(32, 8, 165745296));
+		DEFAULT_STRUCTURES.put(StructureFeature.STRONGHOLD, new StructureConfig(1, 0, 0));
+		DEFAULT_STRUCTURES.put(StructureFeature.MONUMENT, new StructureConfig(32, 5, 10387313));
+		DEFAULT_STRUCTURES.put(StructureFeature.END_CITY, new StructureConfig(20, 11, 10387313));
+		DEFAULT_STRUCTURES.put(StructureFeature.MANSION, new StructureConfig(80, 20, 10387319));
+		//DEFAULT_STRUCTURES.put(StructureFeature.BURIED_TREASURE, new StructureConfig(1, 0, 0));
+		//DEFAULT_STRUCTURES.put(StructureFeature.MINESHAFT, new StructureConfig(1, 0, 0));
+		DEFAULT_STRUCTURES.put(StructureFeature.RUINED_PORTAL, new StructureConfig(40, 15, 34222645));
+		DEFAULT_STRUCTURES.put(StructureFeature.SHIPWRECK, new StructureConfig(24, 4, 165745295));
+		DEFAULT_STRUCTURES.put(StructureFeature.OCEAN_RUIN, new StructureConfig(20, 8, 14357621));
+		DEFAULT_STRUCTURES.put(StructureFeature.BASTION_REMNANT, new StructureConfig(27, 4, 30084232));
+		DEFAULT_STRUCTURES.put(StructureFeature.FORTRESS, new StructureConfig(27, 4, 30084232));
+		DEFAULT_STRUCTURES.put(StructureFeature.NETHER_FOSSIL, new StructureConfig(2, 1, 14357921));
+
+		StructuresConfig structs=new StructuresConfig(Optional.of(StructuresConfig.DEFAULT_STRONGHOLD),DEFAULT_STRUCTURES);*/
+		//ChunkGeneratorSettings settings=new ChunkGeneratorSettings(structs, new GenerationShapeConfig(128, new NoiseSamplingConfig(2.0D, 1.0D, 80.0D, 160.0D), new SlideConfig(-3000, 64, -46), new SlideConfig(-30, 7, 1), 2, 1, 0.0D, 0.0D, true, false, false, false), Blocks.STONE.getDefaultState(), Blocks.WATER.getDefaultState(), -10, -10, 62, false);
+		//BuiltinRegistries.add(BuiltinRegistries.CHUNK_GENERATOR_SETTINGS, (Identifier)SKYBLOCK_FLOATING_ISLANDS.getValue(), settings);
+
+
+
 	}
 	public static final GeneratorType SKYBLOCK = new GeneratorType("skyblock_island") {
         protected ChunkGenerator getChunkGenerator(Registry<Biome> biomeRegistry,Registry<ChunkGeneratorSettings> chunkGeneratorSettingsRegistry, long seed) {

@@ -3,7 +3,7 @@
   "package": "net.nicguzzo.mixin",
   "compatibilityLevel": "JAVA_8",  
   "mixins": [        
-    "BlockMixin","ComposterMixin","GeneratorTypeAccessor","NetherMixin"
+    "BlockMixin","ComposterMixin","GeneratorTypeAccessor","NetherMixin","ChunkGeneratorSettingsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

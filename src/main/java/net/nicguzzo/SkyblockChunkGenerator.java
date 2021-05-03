@@ -69,16 +69,30 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     private boolean first = true;
 
     static final private int n_pbl = 6;
+    private static class Vec2i{
+        public int x;
+        public int z;
+        public Vec2i(int x,int z){
+            this.x=x;
+            this.z=z;
+        }
+    }
     private static class Circle{
         public int cx;
         public int cz;
-        public int rad;
+        public int rad;// rad^2
         public Circle(int cx,int cz,int rad){
             this.cx=cx;
             this.cz=cz;
             this.rad=rad;
         }
+        private boolean inside(int x, int z) {
+            x = x - cx;
+            z = z - cz;
+            return (x * x + z * z) <= rad;
+        }
     }
+    static private Circle[] circles=new Circle[4];
     private static class Pbl {
         double a;
         int cx;
@@ -124,6 +138,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
 //chunkRandom.consume(17292);
         LOGGER.info("SkyblockChunkGenerator");
         LOGGER.info("sealevel " + getSeaLevel());
+                
     }
 
     protected Codec<? extends ChunkGenerator> getCodec() {
@@ -210,6 +225,20 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         return null;
     }
 
+    public Stream<? extends StructureStart<?>> getStructuresWithChildren2(WorldAccess world,StructureAccessor accessor,Chunk chunk, StructureFeature<?> feature) {
+        return chunk.getStructureReferences(feature).stream().map((posx) -> {
+            return ChunkSectionPos.from(new ChunkPos(posx), 0);
+        }).map((posx) -> {
+            StructureStart<?> s=null;
+            if(world.isChunkLoaded(posx.getSectionX(), posx.getSectionZ())){
+                s=accessor.getStructureStart(posx, feature, world.getChunk(posx.getSectionX(), posx.getSectionZ(), ChunkStatus.STRUCTURE_STARTS));
+            }
+            return s;
+        }).filter((structureStart) -> {
+            return structureStart != null && structureStart.hasChildren();
+        });
+    }
+
     private boolean point_in_island(int x, int y, int z) {
         for (int i = 0; i < n_pbl; i++) {
             if (pbls[i].inside(x, y, z))
@@ -226,12 +255,8 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
 
     public void populateNoise(WorldAccess world, StructureAccessor accessor, Chunk chunk) {
         ChunkPos chunkPos = chunk.getPos();
-        /*if(chunkPos.x==4 && chunkPos.z ==14){
-            LOGGER.info("v1");
-        }
-        if(chunkPos.x==5 && chunkPos.z ==15){
-            LOGGER.info("v2");
-        }*/
+
+        boolean on_test= chunkPos.x==4 && chunkPos.z == 11;
 
         if (first) {
             first = false;
@@ -249,128 +274,135 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 pbls[i] = new Pbl(spawn_cx + rx, ry, spawn_cz + rz, r);
             }
         }
-        int cshx = chunkPos.getStartX();
-        int cshz = chunkPos.getStartZ();
-        int cehx = chunkPos.getEndX();
-        int cehz = chunkPos.getEndZ();
+        int chsx = chunkPos.getStartX();
+        int chsz = chunkPos.getStartZ();
+        int chex = chunkPos.getEndX();
+        int chez = chunkPos.getEndZ();
 
         BlockPos.Mutable mutable = new BlockPos.Mutable();
         Heightmap heightmap = chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG);
         Heightmap heightmap2 = chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG);
 
         BlockBox swamp_hut = isStructureAt(accessor, ChunkSectionPos.from(chunkPos, 0), true, StructureFeature.SWAMP_HUT);
+        BlockBox jungle_pyramid = isStructureAt(accessor, ChunkSectionPos.from(chunkPos, 0), true, StructureFeature.JUNGLE_PYRAMID);
         BlockBox village = isStructureAt(accessor, ChunkSectionPos.from(chunkPos, 0), true, StructureFeature.VILLAGE);
+        BlockBox desert_pyramid = isStructureAt(accessor, ChunkSectionPos.from(chunkPos, 0), true, StructureFeature.DESERT_PYRAMID);
+        BlockBox igloo = isStructureAt(accessor, ChunkSectionPos.from(chunkPos, 0), true, StructureFeature.IGLOO);
 
         boolean around=false;
         boolean has_swamp_hut = swamp_hut != null;
         boolean has_village = village != null;
-        int struct_center_x=0;
-        int struct_center_z=0;
-        int rad3=400;
-        if(!has_swamp_hut && !has_village ) {
-            Chunk[] chnks = new Chunk[8];
-            chnks[0] = world.getChunk(chunkPos.x + 1, chunkPos.z, ChunkStatus.STRUCTURE_STARTS);
-            chnks[1] = world.getChunk(chunkPos.x - 1, chunkPos.z, ChunkStatus.STRUCTURE_STARTS);
-            chnks[2] = world.getChunk(chunkPos.x, chunkPos.z + 1, ChunkStatus.STRUCTURE_STARTS);
-            chnks[3] = world.getChunk(chunkPos.x, chunkPos.z - 1, ChunkStatus.STRUCTURE_STARTS);
-            chnks[4] = world.getChunk(chunkPos.x + 1, chunkPos.z + 1, ChunkStatus.STRUCTURE_STARTS);
-            chnks[5] = world.getChunk(chunkPos.x + 1, chunkPos.z - 1, ChunkStatus.STRUCTURE_STARTS);
-            chnks[6] = world.getChunk(chunkPos.x - 1, chunkPos.z + 1, ChunkStatus.STRUCTURE_STARTS);
-            chnks[7] = world.getChunk(chunkPos.x - 1, chunkPos.z - 1, ChunkStatus.STRUCTURE_STARTS);
-            int div=0;
+        boolean has_jungle_pyramid= jungle_pyramid!=null;
+        boolean has_desert_pyramid= desert_pyramid!=null;
+        boolean has_igloo= igloo!=null;
+        circles[0].rad=0;
+        circles[1].rad=0;
+        circles[2].rad=0;
+        circles[3].rad=0;
+        //int struct_center_x=0;
+        //int struct_center_z=0;
+        //int rad3=400;
+        if(!has_swamp_hut && !has_village && !has_jungle_pyramid && !has_desert_pyramid && !has_igloo) {
+            Vec2i[] chnks = new Vec2i[8];
+            chnks[0] = new Vec2i(chunkPos.x + 1, chunkPos.z);
+            chnks[1] = new Vec2i(chunkPos.x - 1, chunkPos.z);
+            chnks[2] = new Vec2i(chunkPos.x, chunkPos.z + 1);
+            chnks[3] = new Vec2i(chunkPos.x, chunkPos.z - 1);
+            chnks[4] = new Vec2i(chunkPos.x + 1, chunkPos.z + 1);
+            chnks[5] = new Vec2i(chunkPos.x + 1, chunkPos.z - 1);
+            chnks[6] = new Vec2i(chunkPos.x - 1, chunkPos.z + 1);
+            chnks[7] = new Vec2i(chunkPos.x - 1, chunkPos.z - 1);
+            
             for (int i = 0; i < chnks.length; i++) {
-                StructureStart<?> swamp_hut1 = accessor.getStructureStart(ChunkSectionPos.from(chnks[i].getPos(), 0), StructureFeature.SWAMP_HUT, chnks[i]);
-
+                //Chunk ch=world.getExistingChunk(chnks[i].x, chnks[i].z);
+                Chunk chnk = world.getChunk(chnks[i].x, chnks[i].z, ChunkStatus.STRUCTURE_STARTS);
+                ChunkPos chunkPos2 =chnk.getPos();
+                StructureStart<?> swamp_hut1 = accessor.getStructureStart(ChunkSectionPos.from(chnk.getPos(), 0), StructureFeature.SWAMP_HUT,chnk);
                 if (swamp_hut1 != null && swamp_hut1.hasChildren()) {
                     around = true;
-                    ChunkPos chunkPos2 = chnks[i].getPos();
-                    struct_center_x = (int) ((chunkPos2.getStartX() + chunkPos2.getEndX()) * 0.5f);
-                    struct_center_z = (int) ((chunkPos2.getStartZ() + chunkPos2.getEndZ()) * 0.5f);
+                    circles[0].cx = (int)chunkPos2.getStartX() + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
+                    circles[0].cz = (int)chunkPos2.getStartZ() + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
+                    circles[0].rad=400;
                     break;
                 }
-                //StructureStart<?> v1=chnks[i].getStructureStart(StructureFeature.VILLAGE);
-                Map<StructureFeature<?>, LongSet> refs=chnks[i].getStructureReferences();
-                //StructureStart<?> v1=starts.get(StructureFeature.VILLAGE);
-                //StructureStart<?> v1 = accessor.getStructureStart(ChunkSectionPos.from(chnks[i].getPos(), 0), StructureFeature.VILLAGE, chnks[i]);
-                LongSet v1=refs.get(StructureFeature.VILLAGE);
-                if(v1!=null && v1.size()>0 /*&& v1.getFeature()==StructureFeature.VILLAGE*/) {
+                StructureStart<?> jungle_pyramid1 = accessor.getStructureStart(ChunkSectionPos.from(chnk.getPos(), 0), StructureFeature.JUNGLE_PYRAMID,chnk);
+                if (jungle_pyramid1 != null && jungle_pyramid1.hasChildren()) {
                     around = true;
-                    ChunkPos chunkPos2 = chnks[i].getPos();
-                    System.out.println("-- chunpos "+chunkPos2);
-                    //struct_center_x += v1.getPos().getX();
-                    //struct_center_z += v1.getPos().getZ();
-                    //div++;
+                    circles[0].cx = (int)chunkPos2.getStartX() + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
+                    circles[0].cz = (int)chunkPos2.getStartZ() + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
+                    circles[0].rad=400;
+                    break;
                 }
-                /*
-                LongSet val=chnks[i].getStructureReferences(StructureFeature.VILLAGE);
-
-                if(!val.isEmpty()) {
+                StructureStart<?> desert_pyramid1 = accessor.getStructureStart(ChunkSectionPos.from(chnk.getPos(), 0), StructureFeature.DESERT_PYRAMID,chnk);
+                if (desert_pyramid1 != null && desert_pyramid1.hasChildren()) {
                     around = true;
-                    ChunkPos chunkPos2 = chnks[i].getPos();
-                    ChunkSectionPos pos=ChunkSectionPos.from(chunkPos2,0);
-                    //LongSet ll=world.getChunk(pos.getSectionX(), pos.getSectionZ(), ChunkStatus.STRUCTURE_REFERENCES).getStructureReferences(StructureFeature.VILLAGE);
+                    circles[0].cx = (int)chunkPos2.getStartX() + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
+                    circles[0].cz = (int)chunkPos2.getStartZ() + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
+                    circles[0].rad=400;
+                    break;
+                }
+                StructureStart<?> igloo1 = accessor.getStructureStart(ChunkSectionPos.from(chnk.getPos(), 0), StructureFeature.IGLOO,chnk);
+                if (igloo1 != null && igloo1.hasChildren()) {
+                    around = true;
+                    circles[0].cx = (int)chunkPos2.getStartX() + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
+                    circles[0].cz = (int)chunkPos2.getStartZ() + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
+                    circles[0].rad=400;
+                    break;
+                }
 
-                    Stream<? extends StructureStart<?>> ss= accessor.getStructuresWithChildren(ChunkSectionPos.from(chnks[i].getPos(), 0),StructureFeature.VILLAGE);
-                    System.out.println("--");
-                    Stream<Circle> cc=ss.map((s)->{
+                
+                
+                //if(world.isChunkLoaded(chnks[i].x, chnks[i].z))
+                if(i<4)
+                {
+                    ChunkSectionPos pos=ChunkSectionPos.from(chnks[i].x, 0,chnks[i].z);
+                    try {
+                        Optional<? extends StructureStart<?>> vv =getStructuresWithChildren2(world,accessor,chnk, StructureFeature.VILLAGE).filter((structureStart) -> {
+                            return structureStart.getChildren().stream().anyMatch((piece) -> {
+                                return piece.getBoundingBox().intersectsXZ(pos.getMinX(), pos.getMinZ(), pos.getMaxX(), pos.getMaxZ());
+                            });
+                        }).findFirst();
+                        if (vv!=null && vv.isPresent()) {                            
+                            around = true;                            
+                            circles[i].cx = (int) chunkPos2.getStartX() + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
+                            circles[i].cz = (int) chunkPos2.getStartZ() + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
+                            circles[i].rad = 250;
+                        }
+                    }catch(RuntimeException e){
 
-                        BlockBox bb=s.getBoundingBox();
-                        Vec3i center=bb.getCenter();
-                        int r1 = (bb.maxX - bb.minX)/2+16;
-                        int r2 = (bb.maxZ - bb.minZ)/2+16;
-                        int r=0;
-                        if (r1 > r2)
-                            r = r1 * r1;
-                        else
-                            r = r2 * r2;
-                        //return new Circle((int) ((bb.minX + bb.maxX) * 0.5f), (int) ((bb.minZ + bb.maxZ) * 0.5f),r);
-                        //return new Circle(center.getX(),center.getZ(),r);
-
-                        return new Circle(  chunkPos2.getStartX() + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2,
-                                            chunkPos2.getStartZ() + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2,400);
-                    });
-
-                    Optional<Circle> oci=cc.findAny();
-                    if(oci.isPresent()) {
-                        Circle ci=oci.get();
-                        struct_center_x += ci.cx;
-                        struct_center_z += ci.cz;
-                        rad3 = ci.rad;
-                        div++;
                     }
-
-                }*/
-/*
-                StructureStart<?> village1 = accessor.getStructureStart(ChunkSectionPos.from(chnks[i].getPos(), 0), StructureFeature.VILLAGE, chnks[i]);
-                if (village1 != null && village1.hasChildren()) {
-
-                    has_village = true;
-                    ChunkPos chunkPos2 = chnks[i].getPos();
-                    System.out.println("village1 "+chunkPos2);
-                    struct_center_x = (int) ((chunkPos2.getStartX() + chunkPos2.getEndX()) * 0.5f);
-                    struct_center_z = (int) ((chunkPos2.getStartZ() + chunkPos2.getEndZ()) * 0.5f);
-                    //rad3=140000;
-                    break;
-                }*/
-            }
-            if(div>0){
-                struct_center_x/=div;
-                struct_center_z/=div;
-                rad3 = 400;
-                System.out.println("village cx" + struct_center_x);
-                System.out.println("village cy" + struct_center_z);
-                System.out.println("village rad" + rad3);
+                    {   
+                        Optional<? extends StructureStart<?>> vv =getStructuresWithChildren2(world,accessor,chnk, StructureFeature.DESERT_PYRAMID).filter((structureStart) -> {
+                            return structureStart.getChildren().stream().anyMatch((piece) -> {
+                                return piece.getBoundingBox().intersectsXZ(pos.getMinX(), pos.getMinZ(), pos.getMaxX(), pos.getMaxZ());
+                            });
+                        }).findFirst();
+                        if (vv!=null && vv.isPresent()) {                            
+                            around = true;                            
+                            circles[i].cx = (int) chunkPos2.getStartX() + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
+                            circles[i].cz = (int) chunkPos2.getStartZ() + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
+                            circles[i].rad = 250;
+                        }
+                    }
+                }
             }
         }
 
-        boolean has_struct = has_village || has_swamp_hut;
+        if(on_test){
+            System.out.println("circle 0 r" + circles[0].rad + " cx "+circles[0].cx+ " cz "+circles[0].cz);
+            System.out.println("circle 1 r" + circles[1].rad + " cx "+circles[1].cx+ " cz "+circles[1].cz);
+            System.out.println("circle 2 r" + circles[2].rad + " cx "+circles[2].cx+ " cz "+circles[2].cz);
+            System.out.println("circle 3 r" + circles[3].rad + " cx "+circles[3].cx+ " cz "+circles[3].cz);
+        }
+
+        boolean has_struct = has_village || has_swamp_hut|| has_jungle_pyramid || has_desert_pyramid ||has_igloo;
 
         if (has_struct || around||
-                inside_radius(spawn_cx,spawn_cz,cshx, cshz,rad2) ||
-                inside_radius(spawn_cx,spawn_cz,cehx, cshz,rad2) ||
-                inside_radius(spawn_cx,spawn_cz,cshx, cehz,rad2) ||
-                inside_radius(spawn_cx,spawn_cz,cehx, cehz,rad2)) {
-            if (has_struct) {
+                inside_radius(spawn_cx,spawn_cz,chsx, chsz,rad2) ||
+                inside_radius(spawn_cx,spawn_cz,chex, chsz,rad2) ||
+                inside_radius(spawn_cx,spawn_cz,chsx, chez,rad2) ||
+                inside_radius(spawn_cx,spawn_cz,chex, chez,rad2)) {
+            if (has_struct ||around) {
                 height_end = 63;
                 height_start = height_end-20;
             }
@@ -389,16 +421,19 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                         {
                             if (
                                     has_struct
-                                    //|| (around && inside_radius(struct_center_x, struct_center_z,cshx + j, cshz + k,rad3))
-                                    || point_in_island(cshx + j, i, cshz + k)
+                                    || (circles[0].rad!=0 && circles[0].inside(chsx + j, chsz + k))
+                                    || (circles[1].rad!=0 && circles[1].inside(chsx + j, chsz + k))
+                                    || (circles[2].rad!=0 && circles[2].inside(chsx + j, chsz + k))
+                                    || (circles[3].rad!=0 && circles[3].inside(chsx + j, chsz + k))
+                                    || point_in_island(chsx + j, i, chsz + k)
                             ) {
                                 PerlinNoiseSampler perlinNoiseSampler = this.noise2.getOctave(1);
-                                double n = yy + perlinNoiseSampler.sample((cshx + j) * 0.1, 0, (cshz + k) * 0.1, 500, 100) * m;
-                                /*if (!around && n >= height_end) {
+                                double n = yy + perlinNoiseSampler.sample((chsx + j) * 0.1, 0, (chsz + k) * 0.1, 500, 100) * m;
+                                if (!around && n >= height_end) {
                                     n = n + 3;
-                                }*/
-                                //if (i > n  || (!around && i>(height_end-3))) {
-                                if (i > n  || (i>(height_end-3))) {
+                                }
+                                if (i > n  || (!around && i>(height_end-3))) {
+                                //if (i > n  || (i>(height_end-3))) {
                                     chunk.setBlockState(mutable.set(j, i, k), stone, false);
                                     heightmap.trackUpdate(j, i, k, stone);
                                     heightmap2.trackUpdate(j, i, k, stone);
@@ -442,5 +477,9 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         glass = Blocks.GLASS.getDefaultState();
         stone = Blocks.STONE.getDefaultState();
         water = Blocks.WATER.getDefaultState();
+        circles[0]=new Circle(0,0,0);
+        circles[1]=new Circle(0,0,0);
+        circles[2]=new Circle(0,0,0);
+        circles[3]=new Circle(0,0,0);
     }
 }
