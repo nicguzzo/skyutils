@@ -1,17 +1,11 @@
 package net.nicguzzo.mixin;
 import com.google.common.collect.Maps;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.chunk.*;
 import net.minecraft.world.gen.feature.StructureFeature;
-import net.nicguzzo.SkyblockNetherChunkGenerator;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +15,8 @@ public class ChunkGeneratorSettingsMixin {
 
 
     //@Inject(method = "createIslandSettings", at = @At("HEAD"), cancellable = true)
-    @ModifyVariable(method = "createIslandSettings(Lnet/minecraft/world/gen/chunk/StructuresConfig;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/Identifier;ZZ)Lnet/minecraft/world/gen/chunk/ChunkGeneratorSettings", at = @At("HEAD"),ordinal=0)
+    //@ModifyVariable(method = "createIslandSettings(Lnet/minecraft/world/gen/chunk/StructuresConfig;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/Identifier;ZZ)Lnet/minecraft/world/gen/chunk/ChunkGeneratorSettings", at = @At("HEAD"),ordinal=0)
+    @ModifyVariable(method = "createIslandSettings", at = @At("HEAD"),ordinal=0)
     //static private void createIslandSettings(StructuresConfig structuresConfig, BlockState defaultBlock, BlockState defaultFluid, Identifier id, boolean mobGenerationDisabled, boolean islandNoiseOverride) {
     static private StructuresConfig injected(StructuresConfig s){
         Map<StructureFeature<?>, StructureConfig> DEFAULT_STRUCTURES= Maps.newHashMap();

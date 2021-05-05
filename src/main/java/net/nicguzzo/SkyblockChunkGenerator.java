@@ -3,15 +3,12 @@ package net.nicguzzo;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
@@ -55,7 +52,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
 
     private final OctavePerlinNoiseSampler noise2;
     private static final BlockState AIR;
-    private static BlockState glass;
+    //private static BlockState glass;
     private static BlockState stone;
     private static BlockState water;
     private int spawn_radius = 60;
@@ -63,7 +60,8 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     private int height_variation = 30;
     private int height_end = 120;
     private int height_start = height_end-20;
-
+    private int bx=0;
+    private int bz=0;
     private int rad2 = 0;
     private int spawn_cx = 0;
     private int spawn_cz = 0;
@@ -154,7 +152,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         this.noise2 = new OctavePerlinNoiseSampler(chunkRandom, IntStream.rangeClosed(-5, 0));
 //chunkRandom.consume(17292);
         LOGGER.info("SkyblockChunkGenerator");
-        LOGGER.info("sealevel " + getSeaLevel());
+        //LOGGER.info("sealevel " + getSeaLevel());
                 
     }
 
@@ -383,27 +381,30 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 yy+=6;
             }
             int he=height_end+20;
+            
             for (int i = height_start; i < he; ++i) {
                 for (int j = 0; j < 16; ++j) {
                     for (int k = 0; k < 16; ++k) {
+                        bx=chsx + j;
+                        bz=chsz + k;
                         //if(inside_radius(cshx+j, cshz+k))
                         {
                             if (
                                     has_struct
-                                    || (circles[0].rad!=0 && circles[0].inside(chsx + j, chsz + k))
-                                    || (circles[1].rad!=0 && circles[1].inside(chsx + j, chsz + k))
-                                    || (circles[2].rad!=0 && circles[2].inside(chsx + j, chsz + k))
-                                    || (circles[3].rad!=0 && circles[3].inside(chsx + j, chsz + k))
-                                    || point_in_island(chsx + j, i, chsz + k)
+                                    || (circles[0].rad!=0 && circles[0].inside(bx,bz))
+                                    || (circles[1].rad!=0 && circles[1].inside(bx,bz))
+                                    || (circles[2].rad!=0 && circles[2].inside(bx,bz))
+                                    || (circles[3].rad!=0 && circles[3].inside(bx,bz))
+                                    || point_in_island(bx, i, bz)
                             ) {
                                 PerlinNoiseSampler perlinNoiseSampler = this.noise2.getOctave(1);
-                                double n = yy + perlinNoiseSampler.sample((chsx + j) * 0.1, 0, (chsz + k) * 0.1, 500, 100) * m;
-                                double n2 = height_end+ perlinNoiseSampler.sample((chsx + j) * 0.01, 0, (chsz + k) * 0.01, 500, 100) * 30;
+                                double n = yy + perlinNoiseSampler.sample((bx) * 0.1, 0, (bz) * 0.1, 500, 100) * m;
+                                double n2 = height_end+ perlinNoiseSampler.sample((bx) * 0.01, 0, (bz) * 0.01, 500, 100) * 30;
                                 if(n2<height_end){
-                                    n2=height_end;
+                                    n2=height_end+1;
                                 }
                                 if (n >= height_end) {
-                                    n=height_end-1;
+                                    n=height_end-2;
                                 }
                                 //if (!around && n >= height_end) {
                                 //    n = n + 1;
@@ -447,7 +448,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
 
     static {
         AIR = Blocks.AIR.getDefaultState();
-        glass = Blocks.GLASS.getDefaultState();
+        //glass = Blocks.GLASS.getDefaultState();
         stone = Blocks.STONE.getDefaultState();
         water = Blocks.WATER.getDefaultState();
         circles[0]=new Circle(0,0,0);
