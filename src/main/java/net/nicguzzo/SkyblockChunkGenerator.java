@@ -147,6 +147,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         this.seed = seed;
 
         this.settings = settings;
+
         rad2 = spawn_radius * spawn_radius;
         ChunkRandom chunkRandom = new ChunkRandom(seed);
         this.noise2 = new OctavePerlinNoiseSampler(chunkRandom, IntStream.rangeClosed(-5, 0));
