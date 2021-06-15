@@ -7,13 +7,15 @@
     "BlockMixin",
     "ComposterMixin",
     "NetherMixin",
-    "ChunkGeneratorSettingsMixin",
+    "ChunkGeneratorSettingsMixin"
+  ],
+  "server": [
     "GeneratorOptionsMixin"
   ],
-  "server": [],
   "client": [
     "GeneratorTypeAccessor",
-    "GeneratorTypeMixin"
+    "GeneratorTypeMixin",
+    "GeneratorOptionsMixin2"
   ],
   "injectors": {
     "defaultRequire": 1

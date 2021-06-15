@@ -62,13 +62,4 @@ class GeneratorOptionsMixin {
         }
     }
 
-    @ModifyVariable(method = "<init>", at = @At("HEAD"), index = 4, ordinal = 1, print = true)
-    static private boolean injected(boolean b) {
-        if (SkyutilsClientMod.skyblock) {
-            System.out.println("force bonus chest!!!!");
-            return true;
-        } else {
-            return b;
-        }
-    }
 }
