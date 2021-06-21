@@ -49,7 +49,7 @@ class GeneratorOptionsMixin {
             }
             Registry<DimensionType> registry = dynamicRegistryManager.get(Registry.DIMENSION_TYPE_KEY);
             Registry<Biome> registry2 = dynamicRegistryManager.get(Registry.BIOME_KEY);
-            Registry<ChunkGeneratorSettings> registry3 = dynamicRegistryManager.get(Registry.NOISE_SETTINGS_WORLDGEN);
+            Registry<ChunkGeneratorSettings> registry3 = dynamicRegistryManager.get(Registry.CHUNK_GENERATOR_SETTINGS_KEY);
             SimpleRegistry<DimensionOptions> simpleRegistry = DimensionType.createDefaultDimensionOptions(registry,
                     registry2, registry3, l);
 
@@ -58,7 +58,7 @@ class GeneratorOptionsMixin {
                     () -> registry3.get(ChunkGeneratorSettings.FLOATING_ISLANDS));
 
             cir.setReturnValue(new GeneratorOptions(l, bl, true,
-                    GeneratorOptions.method_28608(registry, simpleRegistry, chunk_generator)));
+                    GeneratorOptions.getRegistryWithReplacedOverworldGenerator(registry, simpleRegistry, chunk_generator)));
         }
     }
 

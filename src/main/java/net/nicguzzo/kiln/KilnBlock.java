@@ -2,11 +2,15 @@ package net.nicguzzo.kiln;
 
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
+
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.entity.BlockEntity;
-
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
@@ -26,6 +30,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+import net.nicguzzo.SkyutilsMod;
 
 public class KilnBlock extends BlockWithEntity {
 
@@ -34,7 +39,7 @@ public class KilnBlock extends BlockWithEntity {
     // public static final BooleanProperty LIT;
     public KilnBlock(Settings settings) {
         super(settings);
-        this.setDefaultState( (BlockState) (this.stateManager.getDefaultState().with(FACING, Direction.NORTH) ));
+        this.setDefaultState((BlockState) (this.stateManager.getDefaultState().with(FACING, Direction.NORTH)));
     }
 
     @Override
@@ -43,8 +48,9 @@ public class KilnBlock extends BlockWithEntity {
     }
 
     @Override
-    public BlockEntity createBlockEntity(BlockView view) {
-        return new KilnBlockEntity();
+    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        // TODO Auto-generated method stub
+        return new KilnBlockEntity(pos, state);
     }
 
     @Override
@@ -66,13 +72,16 @@ public class KilnBlock extends BlockWithEntity {
                 System.out.println("open!");
 
                 NamedScreenHandlerFactory screenHandlerFactory = state.createScreenHandlerFactory(world, pos);
- 
+
                 if (screenHandlerFactory != null) {
-                    //With this call the server will request the client to open the appropriate Screenhandler
+                    // With this call the server will request the client to open the appropriate
+                    // Screenhandler
                     player.openHandledScreen(screenHandlerFactory);
                 }
-                /*ContainerProviderRegistry.INSTANCE.openContainer(SkyutilsMod.KILN, player,
-                        buf -> buf.writeBlockPos(pos));*/
+                /*
+                 * ContainerProviderRegistry.INSTANCE.openContainer(SkyutilsMod.KILN, player,
+                 * buf -> buf.writeBlockPos(pos));
+                 */
             }
         }
         return ActionResult.SUCCESS;
@@ -121,6 +130,12 @@ public class KilnBlock extends BlockWithEntity {
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
         builder.add(FACING);
+    }
+
+    @Nullable
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state,
+            BlockEntityType<T> type) {
+        return !world.isClient ? checkType(type, SkyutilsMod.KILN_ENTITY, KilnBlockEntity::tick) : null;
     }
 
     static {

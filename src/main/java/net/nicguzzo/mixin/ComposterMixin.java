@@ -25,17 +25,17 @@ import net.minecraft.world.WorldAccess;
 @Mixin(ComposterBlock.class)
 public abstract class ComposterMixin {
 
-  private static boolean addToComposter(int level,BlockState state, WorldAccess world, BlockPos pos, ItemStack item){
+  private static boolean addToComposter(int level, BlockState state, WorldAccess world, BlockPos pos, ItemStack item) {
 
-    System.out.println("composter level: "+level);    
+    System.out.println("composter level: " + level);
     int j = level + 1;
-    world.setBlockState(pos, (BlockState)state.with(ComposterBlock.LEVEL, j), 3);
+    world.setBlockState(pos, (BlockState) state.with(ComposterBlock.LEVEL, j), 3);
     if (j == 7) {
       world.getBlockTickScheduler().schedule(pos, state.getBlock(), 20);
     }
     return true;
-    
- }
+
+  }
 
   @Shadow
   native private static BlockState emptyComposter(BlockState state, WorldAccess world, BlockPos pos);
@@ -45,13 +45,13 @@ public abstract class ComposterMixin {
   public void onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit,
       CallbackInfoReturnable<ActionResult> info) {
     int i = (Integer) state.get(ComposterBlock.LEVEL);
-    System.out.println("composter on use level: "+i);
+    System.out.println("composter on use level: " + i);
     ItemStack itemStack = player.getStackInHand(hand);
     if (i < 8 && ComposterBlock.ITEM_TO_LEVEL_INCREASE_CHANCE.containsKey(itemStack.getItem())) {
       if (i < 7 && !world.isClient) {
-        boolean bl = ComposterMixin.addToComposter(i,state, world, pos, itemStack);
+        boolean bl = ComposterMixin.addToComposter(i, state, world, pos, itemStack);
         world.syncWorldEvent(1500, pos, bl ? 1 : 0);
-        if (!player.abilities.creativeMode) {
+        if (!player.getAbilities().creativeMode) {
           itemStack.decrement(1);
         }
       }
@@ -59,7 +59,7 @@ public abstract class ComposterMixin {
       info.setReturnValue(ActionResult.SUCCESS);
     } else if (i == 8) {
       if (!world.isClient) {
-        
+
         double d = (double) (world.random.nextFloat() * 0.7F) + 0.15000000596046448D;
         double e = (double) (world.random.nextFloat() * 0.7F) + 0.06000000238418579D + 0.6D;
         double g = (double) (world.random.nextFloat() * 0.7F) + 0.15000000596046448D;
@@ -72,10 +72,10 @@ public abstract class ComposterMixin {
       emptyComposter(state, world, pos);
       world.playSound((PlayerEntity) null, pos, SoundEvents.BLOCK_COMPOSTER_EMPTY, SoundCategory.BLOCKS, 1.0F, 1.0F);
 
-      info.setReturnValue(ActionResult.SUCCESS);      
+      info.setReturnValue(ActionResult.SUCCESS);
     } else {
 
-      info.setReturnValue(ActionResult.PASS);      
+      info.setReturnValue(ActionResult.PASS);
     }
     info.cancel();
     return;

@@ -1,10 +1,15 @@
 package net.nicguzzo;
 
+import com.google.common.collect.Sets;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -14,22 +19,29 @@ import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.SpawnGroup;
+import net.minecraft.structure.StructurePiece;
 import net.minecraft.structure.StructureStart;
+import net.minecraft.util.Util;
+import net.minecraft.util.collection.Pool;
 import net.minecraft.util.math.*;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.ChunkRegion;
+import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.SpawnHelper;
 import net.minecraft.world.WorldAccess;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeAccess;
+import net.minecraft.world.biome.source.BiomeCoords;
 import net.minecraft.world.biome.source.BiomeSource;
 import net.minecraft.world.chunk.*;
 import net.minecraft.world.gen.ChunkRandom;
 import net.minecraft.world.gen.GenerationStep;
 import net.minecraft.world.gen.StructureAccessor;
+import net.minecraft.world.gen.StructureWeightSampler;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
+import net.minecraft.world.gen.chunk.GenerationShapeConfig;
 import net.minecraft.world.gen.chunk.VerticalBlockSample;
 import net.minecraft.world.gen.feature.StructureFeature;
 import net.minecraft.util.math.noise.OctavePerlinNoiseSampler;
@@ -52,6 +64,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
 
     private final OctavePerlinNoiseSampler noise2;
     private final PerlinNoiseSampler perlinNoiseSampler;
+    private final int verticalNoiseResolution;
     private static final BlockState AIR;
     // private static BlockState glass;
     private static BlockState stone;
@@ -145,8 +158,11 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         super(populationSource, biomeSource, ((ChunkGeneratorSettings) settings.get()).getStructuresConfig(), seed);
 
         this.seed = seed;
-
+        ChunkGeneratorSettings chunkGeneratorSettings = (ChunkGeneratorSettings) settings.get();
         this.settings = settings;
+        GenerationShapeConfig generationShapeConfig = chunkGeneratorSettings.getGenerationShapeConfig();
+
+        this.verticalNoiseResolution = BiomeCoords.toBlock(generationShapeConfig.getSizeVertical());
 
         rad2 = spawn_radius * spawn_radius;
         ChunkRandom chunkRandom = new ChunkRandom(seed);
@@ -167,13 +183,15 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         return new SkyblockChunkGenerator(this.populationSource.withSeed(seed), seed, this.settings);
     }
 
-    public BlockView getColumnSample(int x, int z) {
+    // @Override
+    public VerticalBlockSample getColumnSample(int x, int z, HeightLimitView world) {
         BlockState[] blockStates = new BlockState[1];
         blockStates[0] = AIR;
-        return new VerticalBlockSample(blockStates);
+        return new VerticalBlockSample(0, blockStates);
     }
 
-    public int getHeight(int x, int z, Heightmap.Type heightmapType) {
+    public int getHeight(int x, int z, Heightmap.Type heightmap, HeightLimitView world) {
+        // public int getHeight(int x, int z, Heightmap.Type heightmapType) {
         if (!inside_radius(spawn_cx, spawn_cz, x, z, rad2)) {
             height_end = 62;
             height_start = height_end - 20;
@@ -206,13 +224,14 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 int q = chunk.sampleHeightmap(Heightmap.Type.WORLD_SURFACE_WG, m, n) + 1;
                 double e = 1.0;// this.surfaceDepthNoise.sample((double)o * 0.0625D, (double)p * 0.0625D,
                                // 0.0625D, (double)m * 0.0625D) * 15.0D;
+                int r = ((ChunkGeneratorSettings) this.settings.get()).getMinSurfaceLevel();
                 region.getBiome(mutable.set(k + m, q, l + n)).buildSurface(chunkRandom, chunk, o, p, q, e, stone, water,
-                        this.getSeaLevel(), region.getSeed());
+                        this.getSeaLevel(), r, region.getSeed());
             }
         }
     }
 
-    public List<SpawnSettings.SpawnEntry> getEntitySpawnList(Biome biome, StructureAccessor accessor, SpawnGroup group,
+    public Pool<SpawnSettings.SpawnEntry> getEntitySpawnList(Biome biome, StructureAccessor accessor, SpawnGroup group,
             BlockPos pos) {
         if (accessor.getStructureAt(pos, true, StructureFeature.SWAMP_HUT).hasChildren()) {
             if (group == SpawnGroup.MONSTER) {
@@ -241,21 +260,41 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         return super.getEntitySpawnList(biome, accessor, group, pos);
     }
 
-    public BlockBox isStructureAt(StructureAccessor accessor, ChunkSectionPos pos, boolean matchChildren,
-            StructureFeature<?> feature) {
-        Optional<? extends StructureStart<?>> s = (accessor.getStructuresWithChildren(pos, feature)
+    private boolean struct_contains(StructureStart<?> structure, BlockPos pos) {
+        Iterator<?> var2 = structure.getChildren().iterator();
+        StructurePiece structurePiece;
+        do {
+            if (!var2.hasNext()) {
+                return false;
+            }
+
+            structurePiece = (StructurePiece) var2.next();
+        } while (!structurePiece.getBoundingBox().contains(pos));
+        return true;
+    }
+
+    public boolean isStructureAt(WorldAccess world, Chunk chunk, StructureAccessor accessor, ChunkSectionPos pos,
+            boolean matchChildren, StructureFeature<?> feature) {
+        Optional<? extends StructureStart<?>> s = getStructuresWithChildren2(world, accessor, chunk, feature)
                 .filter((structureStart) -> {
-                    return structureStart.getBoundingBox().intersectsXZ(pos.getMinX(), pos.getMinZ(), pos.getMaxX(),
-                            pos.getMaxZ());
-                }).filter((structureStart) -> {
-                    return !matchChildren || structureStart.getChildren().stream().anyMatch((piece) -> {
+                    return structureStart.getChildren().stream().anyMatch((piece) -> {
                         return piece.getBoundingBox().intersectsXZ(pos.getMinX(), pos.getMinZ(), pos.getMaxX(),
                                 pos.getMaxZ());
                     });
-                }).findFirst());
+                }).findFirst();
+
+        /*
+         * Optional<? extends StructureStart<?>> s =
+         * (accessor.getStructuresWithChildren(pos, feature) .filter((structureStart) ->
+         * { return struct_contains(structureStart, pos.getMinPos());
+         * }).filter((structureStart) -> { return !matchChildren ||
+         * structureStart.getChildren().stream().anyMatch((piece) -> { return
+         * piece.getBoundingBox().intersectsXZ(pos.getMinX(), pos.getMinZ(),
+         * pos.getMaxX(), pos.getMaxZ()); }); }).findFirst());
+         */
         if (s.isPresent())
-            return s.get().getBoundingBox();
-        return null;
+            return true;
+        return false;
     }
 
     public Stream<? extends StructureStart<?>> getStructuresWithChildren2(WorldAccess world, StructureAccessor accessor,
@@ -288,9 +327,10 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         return (x * x + z * z) <= r2;
     }
 
-    public void populateNoise(WorldAccess world, StructureAccessor accessor, Chunk chunk) {
-        ChunkPos chunkPos = chunk.getPos();
+    public CompletableFuture<Chunk> populateNoise(Executor executor, StructureAccessor accessor, Chunk chunk) {
 
+        ChunkPos chunkPos = chunk.getPos();
+        WorldAccess world = accessor.world;
         // boolean on_test = chunkPos.x == 70 && chunkPos.z == 211;
 
         if (first) {
@@ -319,9 +359,12 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         Heightmap heightmap2 = chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG);
         boolean has_struct = false;
 
+        // StructureWeightSampler structureWeightSampler = new
+        // StructureWeightSampler(accessor, chunk);
+
         for (int j = 0; j < features.length; j++) {
-            BlockBox bb = isStructureAt(accessor, ChunkSectionPos.from(chunkPos, 0), true, features[j]);
-            has_struct = (bb != null) || has_struct;
+            boolean bb = isStructureAt(world, chunk, accessor, ChunkSectionPos.from(chunkPos, 0), true, features[j]);
+            has_struct = bb || has_struct;
         }
 
         boolean around = false;
@@ -415,11 +458,9 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 yy += 6;
             }
             int he = height_end2;
-            ProtoChunk protoChunk = (ProtoChunk) chunk;
-            ChunkSection chunkSection = protoChunk.getSection(15);
-            chunkSection.lock();
 
             for (int i = height_start; i < he; ++i) {
+                int y = chunk.getBottomY() + i;
                 for (int j = 0; j < 16; ++j) {
                     bx = chsx + j;
                     for (int k = 0; k < 16; ++k) {
@@ -449,25 +490,25 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                                 if (i > n && i < n2) {
                                     // if (i > n || (!around && i>(height_end-3))) {
                                     // if (i > n || (i>(height_end-3))) {
-                                    chunk.setBlockState(mutable.set(j, i, k), stone, false);
-                                    heightmap.trackUpdate(j, i, k, stone);
-                                    heightmap2.trackUpdate(j, i, k, stone);
+
+                                    chunk.setBlockState(mutable.set(j, y, k), stone, false);
+                                    heightmap.trackUpdate(j, y, k, stone);
+                                    heightmap2.trackUpdate(j, y, k, stone);
                                 }
                             }
                         }
                     }
                 }
             }
-            chunkSection.unlock();
         }
-
+        return CompletableFuture.completedFuture(chunk);
     }
 
     public void carve(long seed, BiomeAccess access, Chunk chunk, GenerationStep.Carver carver) {
     }
 
     public int getSeaLevel() {
-        return 62;
+        return 63;
         // return ((ChunkGeneratorSettings) this.settings.get()).getSeaLevel();
     }
 
@@ -475,12 +516,11 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         // if (!((ChunkGeneratorSettings)
         // this.settings.get()).isMobGenerationDisabled())
         {
-            int i = region.getCenterChunkX();
-            int j = region.getCenterChunkZ();
-            Biome biome = region.getBiome((new ChunkPos(i, j)).getStartPos());
+            ChunkPos chunkPos = region.getCenterPos();
+            Biome biome = region.getBiome(chunkPos.getStartPos());
             ChunkRandom chunkRandom = new ChunkRandom();
-            chunkRandom.setPopulationSeed(region.getSeed(), i << 4, j << 4);
-            SpawnHelper.populateEntities(region, biome, i, j, chunkRandom);
+            chunkRandom.setPopulationSeed(region.getSeed(), chunkPos.getStartX(), chunkPos.getStartZ());
+            SpawnHelper.populateEntities(region, biome, chunkPos, chunkRandom);
         }
     }
 

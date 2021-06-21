@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "id": "skyutils",
   "version": "${version}",
-
   "name": "Sky utilities Mod",
   "description": "Sky utilities",
   "authors": [
@@ -12,10 +11,8 @@
     "homepage": "",
     "sources": ""
   },
-
   "license": "GPL3",
   "icon": "assets/skyutils/icon.png",
-
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -28,11 +25,11 @@
   "mixins": [
     "skyutils.mixins.json"
   ],
-
   "depends": {
     "fabricloader": ">=0.11.3",
     "fabric": "*",
-    "minecraft": "1.16.x"
+    "minecraft": "1.17.x",
+    "java": ">=16"
   },
-  "accessWidener" : "skyutils.accesswidener"
+  "accessWidener": "skyutils.accesswidener"
 }

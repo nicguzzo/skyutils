@@ -1,7 +1,5 @@
 package net.nicguzzo;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.FluidDrainable;
@@ -54,14 +52,15 @@ public class Crucible extends Item {
                 if (this.fluid == Fluids.EMPTY) {
                     blockState = world.getBlockState(blockPos);
                     if (blockState.getBlock() instanceof FluidDrainable) {
-                        Fluid fluid = ((FluidDrainable) blockState.getBlock()).tryDrainFluid(world, blockPos,
+                        ItemStack fluid_item = ((FluidDrainable) blockState.getBlock()).tryDrainFluid(world, blockPos,
                                 blockState);
-                        if (fluid != Fluids.EMPTY) {
+
+                        if (fluid_item != ItemStack.EMPTY) {
                             user.incrementStat(Stats.USED.getOrCreateStat(this));
                             ItemStack item = null;
-                            if (fluid.matchesType(Fluids.LAVA)) {
+                            if (fluid_item.getItem() == SkyutilsMod.LAVA_CRUCIBLE) {
                                 item = new ItemStack(SkyutilsMod.LAVA_CRUCIBLE);
-                            } else {
+                            } else if (fluid_item.getItem() == SkyutilsMod.WATER_CRUCIBLE) {
                                 item = new ItemStack(SkyutilsMod.WATER_CRUCIBLE);
                             }
                             user.playSound(fluid.matchesType(Fluids.LAVA) ? SoundEvents.ITEM_BUCKET_FILL_LAVA
@@ -101,21 +100,21 @@ public class Crucible extends Item {
 
     protected ItemStack getEmptiedStack(ItemStack stack, PlayerEntity player) {
         // return !player.abilities.creativeMode ? new ItemStack(Items.BUCKET) : stack;
-        return !player.abilities.creativeMode ? new ItemStack(SkyutilsMod.CRUCIBLE) : stack;
+        return !player.getAbilities().creativeMode ? new ItemStack(SkyutilsMod.CRUCIBLE) : stack;
     }
 
     public void onEmptied(World world, ItemStack stack, BlockPos pos) {
     }
 
     private ItemStack getFilledStack(ItemStack stack, PlayerEntity player, Item filledBucket) {
-        if (player.abilities.creativeMode) {
+        if (player.getAbilities().creativeMode) {
             return stack;
         } else {
             stack.decrement(1);
             if (stack.isEmpty()) {
                 return new ItemStack(filledBucket);
             } else {
-                if (!player.inventory.insertStack(new ItemStack(filledBucket))) {
+                if (!player.getInventory().insertStack(new ItemStack(filledBucket))) {
                     player.dropItem(new ItemStack(filledBucket), false);
                 }
 
@@ -124,8 +123,7 @@ public class Crucible extends Item {
         }
     }
 
-    public boolean placeFluid(@Nullable PlayerEntity player, World world, BlockPos pos,
-            @Nullable BlockHitResult hitResult) {
+    public boolean placeFluid(PlayerEntity player, World world, BlockPos pos, BlockHitResult hitResult) {
         if (!(this.fluid instanceof Fluid)) {
             return false;
         } else {
@@ -168,7 +166,7 @@ public class Crucible extends Item {
         }
     }
 
-    protected void playEmptyingSound(@Nullable PlayerEntity player, World world, BlockPos pos) {
+    protected void playEmptyingSound(PlayerEntity player, World world, BlockPos pos) {
         SoundEvent soundEvent = this.fluid.matchesType(Fluids.LAVA) ? SoundEvents.ITEM_BUCKET_EMPTY_LAVA
                 : SoundEvents.ITEM_BUCKET_EMPTY;
         world.playSound(player, pos, soundEvent, SoundCategory.BLOCKS, 1.0F, 1.0F);

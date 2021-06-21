@@ -2,6 +2,7 @@ package net.nicguzzo.kiln;
 
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
@@ -9,26 +10,28 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
-import net.minecraft.util.Tickable;
+
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.nicguzzo.SkyutilsMod;
 
-public class KilnBlockEntity extends LootableContainerBlockEntity implements  BlockEntityClientSerializable, Tickable {
+public class KilnBlockEntity extends LootableContainerBlockEntity implements BlockEntityClientSerializable {
     private DefaultedList<ItemStack> inventory;
     private int burn_time = 0;
     private int cook_time = 0;
     private int progress = 0;
     private static final int INVENTORY_SIZE = 4;
-    public static final int CHARCOAL_BURN_TIME =  1000;
+    public static final int CHARCOAL_BURN_TIME = 1000;
     public static final int COBBLESTONE_COOK_TIME = 1000;
     public static final int COBBLESTONE_COST = 16;
     public static final int RAW_CRUCIBLE_COOK_TIME = 1000;
-    protected final PropertyDelegate propertyDelegate= new PropertyDelegate() {
+    protected final PropertyDelegate propertyDelegate = new PropertyDelegate() {
         @Override
         public int get(int key) {
             switch (key) {
@@ -62,17 +65,16 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements  Bl
         }
     };
 
-    
-
-    public KilnBlockEntity() {
-        super(SkyutilsMod.KILN_ENTITY_TYPE);
+    public KilnBlockEntity(BlockPos pos, BlockState state) {
+        super(SkyutilsMod.KILN_ENTITY_TYPE, pos, state);
         this.inventory = DefaultedList.ofSize(INVENTORY_SIZE, ItemStack.EMPTY);
-        //this.propertyDelegate 
+        // this.propertyDelegate
     };
-    /*@Override
-    public Text getDisplayName() {
-        return new TranslatableText(getCachedState().getBlock().getTranslationKey());
-    }*/
+
+    /*
+     * @Override public Text getDisplayName() { return new
+     * TranslatableText(getCachedState().getBlock().getTranslationKey()); }
+     */
     @Override
     protected Text getContainerName() {
         return new TranslatableText("container.kiln");
@@ -99,27 +101,30 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements  Bl
     }
 
     @Override
-    public void fromTag(BlockState state,CompoundTag tag) {
-        super.fromTag(state,tag);
+    public void readNbt(NbtCompound tag) {
+        super.readNbt(tag);
         this.inventory = DefaultedList.ofSize(this.size(), ItemStack.EMPTY);
-        Inventories.fromTag(tag, this.inventory);
+        Inventories.readNbt(tag, this.inventory);
         this.burn_time = tag.getInt("burn_time");
         this.cook_time = tag.getInt("cook_time");
         this.progress = tag.getInt("progress");
     }
 
     @Override
-    public CompoundTag toTag(CompoundTag tag) {
-        super.toTag(tag);
+    public NbtCompound writeNbt(NbtCompound tag) {
+        super.writeNbt(tag);
         tag.putInt("burn_time", this.burn_time);
         tag.putInt("cook_time", this.cook_time);
         tag.putInt("progress", this.progress);
-        Inventories.toTag(tag, this.inventory);
+        Inventories.writeNbt(tag, this.inventory);
         return tag;
     }
 
-    @Override
-    public void tick() {
+    public static void tick(World world, BlockPos pos, BlockState state, KilnBlockEntity blockEntity) {
+        blockEntity.tick();
+    }
+
+    private void tick() {
         if (this.burn_time > 0) {
             this.burn_time--;
         }
@@ -132,7 +137,7 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements  Bl
             if (out.isEmpty()) {
                 if (!crucible.isEmpty()) {
                     if (!item.isEmpty() && item.getItem() == Items.COBBLESTONE && item.getCount() >= COBBLESTONE_COST) {
-                         cook(item, fuel, crucible, COBBLESTONE_COOK_TIME, COBBLESTONE_COST,
+                        cook(item, fuel, crucible, COBBLESTONE_COOK_TIME, COBBLESTONE_COST,
                                 (Item) SkyutilsMod.LAVA_CRUCIBLE);
                     } else {
                         this.cook_time = 0;
@@ -140,7 +145,7 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements  Bl
                     }
                 } else {
                     if (!item.isEmpty() && item.getItem() == SkyutilsMod.RAW_CRUCIBLE) {
-                         cook(item, fuel, crucible, RAW_CRUCIBLE_COOK_TIME, 1, SkyutilsMod.CRUCIBLE);
+                        cook(item, fuel, crucible, RAW_CRUCIBLE_COOK_TIME, 1, SkyutilsMod.CRUCIBLE);
                     } else {
                         this.cook_time = 0;
                         this.progress = 0;
@@ -154,19 +159,19 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements  Bl
     }
 
     @Override
-    public void fromClientTag(CompoundTag tag) {        
-        this.fromTag(this.getCachedState(),tag);
+    public void fromClientTag(NbtCompound tag) {
+        this.readNbt(tag);
     }
 
     @Override
-    public CompoundTag toClientTag(CompoundTag tag) {
-        return this.toTag(tag);
+    public NbtCompound toClientTag(NbtCompound tag) {
+        return this.writeNbt(tag);
     }
 
     private boolean cook(ItemStack item, ItemStack fuel, ItemStack crucible, int total_cook_time, int dec, Item out) {
         if (burn_time == 0) {
-            if(!fuel.isEmpty()){
-                this.burn_time = CHARCOAL_BURN_TIME;                
+            if (!fuel.isEmpty()) {
+                this.burn_time = CHARCOAL_BURN_TIME;
                 fuel.decrement(1);
             }
         }
@@ -189,7 +194,8 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements  Bl
                 }
             }
         }
-        
+
         return this.cook_time > 0;
     }
+
 }

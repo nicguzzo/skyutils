@@ -1,5 +1,7 @@
 package net.nicguzzo;
 
+import java.util.Optional;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
@@ -7,36 +9,44 @@ import net.minecraft.block.FluidDrainable;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.Material;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.Fluid;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemPlacementContext;
-
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.item.ItemStack;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.IntProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.BlockView;
-
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
 
 public class CondenserBlock extends HorizontalFacingBlock implements BlockEntityProvider, FluidDrainable {
-    public static final IntProperty LEVEL = IntProperty.of("level", 0, 7);
+    public static final IntProperty LEVEL;
 
     public CondenserBlock() {
         super(Settings.of(Material.WOOD).nonOpaque());
-        setDefaultState(this.stateManager.getDefaultState().with(Properties.HORIZONTAL_FACING, Direction.NORTH).with(LEVEL, 0));
+        setDefaultState(this.stateManager.getDefaultState().with(LEVEL, 0).with(FACING, Direction.NORTH));
+    }
+
+    @Nullable
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state,
+            BlockEntityType<T> type) {
+        return !world.isClient ? checkType(type, SkyutilsMod.CONDENSER_ENTITY, CondenserEntity::tick) : null;
+    }
+
+    @Override
+    public Optional<SoundEvent> getBucketFillSound() {
+        return Fluids.WATER.getBucketFillSound();
     }
 
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> stateManager) {
-        stateManager.add(Properties.HORIZONTAL_FACING);
-        stateManager.add(LEVEL);
+        stateManager.add(LEVEL, Properties.HORIZONTAL_FACING);
     }
 
     @Override
@@ -44,23 +54,19 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
         return (BlockState) this.getDefaultState().with(FACING, ctx.getPlayerFacing());
     }
 
-    @Override
-    public BlockEntity createBlockEntity(BlockView blockView) {
-        return new CondenserEntity();
+    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new CondenserEntity(pos, state);
     }
 
     public void setLevel(World world, BlockPos pos, BlockState state, int level) {
 
         world.setBlockState(pos, (BlockState) state.with(LEVEL, MathHelper.clamp(level, 0, 7)), 2);
-        // world.updateHorizontalAdjacent(pos, this);
         world.updateNeighbors(pos, this);
-        // world.markDirty(pos, world.getBlockEntity(pos));
     }
 
     public void incLevel(World world, BlockPos pos, BlockState state) {
         int level = ((Integer) state.get(LEVEL)) + 1;
         world.setBlockState(pos, (BlockState) state.with(LEVEL, MathHelper.clamp(level, 0, 7)), 2);
-        // world.updateHorizontalAdjacent(pos, this);
         world.updateNeighbors(pos, this);
     }
 
@@ -68,20 +74,20 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
         return (Integer) state.get(LEVEL);
     }
 
-    @Override
-    public void rainTick(World world, BlockPos pos) {
-        /*
-         * System.out.println("condenser rainTick "); if (!world.isClient()) { //if
-         * (world.random.nextInt(10) <= 3) { BlockState state =
-         * world.getBlockState(pos); if ((Integer)state.get(LEVEL) < 7) {
-         * world.setBlockState(pos, (BlockState) state.cycle(LEVEL), 2);
-         * System.out.println("condenser level rain " + (Integer) state.get(LEVEL)); } }
-         * }
-         */
-    }
+    // @Override
+    // public void precipitationTick(World world, BlockPos pos) {
+    /*
+     * System.out.println("condenser rainTick "); if (!world.isClient()) { //if
+     * (world.random.nextInt(10) <= 3) { BlockState state =
+     * world.getBlockState(pos); if ((Integer)state.get(LEVEL) < 7) {
+     * world.setBlockState(pos, (BlockState) state.cycle(LEVEL), 2);
+     * System.out.println("condenser level rain " + (Integer) state.get(LEVEL)); } }
+     * }
+     */
+    // }
 
     @Override
-    public Fluid tryDrainFluid(WorldAccess world, BlockPos pos, BlockState state) {
+    public ItemStack tryDrainFluid(WorldAccess world, BlockPos pos, BlockState state) {
         if (!world.isClient()) {
             int i = (Integer) state.get(LEVEL);
             System.out.println(" tryDrainFluid condenser level " + i);
@@ -91,13 +97,22 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
                 if (e != null) {
                     e.empty();
                 }
-                // ((World)world).markDirty(pos, world.getBlockEntity(pos));
-                world.playSound((PlayerEntity) null, pos, SoundEvents.ITEM_BUCKET_FILL, SoundCategory.BLOCKS, 1.0F,
-                        1.0F);
-                return Fluids.WATER;
+                // world.playSound((PlayerEntity) null, pos, SoundEvents.ITEM_BUCKET_FILL,
+                // SoundCategory.BLOCKS, 1.0F,1.0F);
+                return new ItemStack(SkyutilsMod.WATER_CRUCIBLE);
             }
         }
-        return Fluids.EMPTY;
+        return ItemStack.EMPTY;
     }
 
+    @Nullable
+    static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> checkType(BlockEntityType<A> givenType,
+            BlockEntityType<E> expectedType, BlockEntityTicker<? super E> ticker) {
+        return expectedType == givenType ? (@Nullable BlockEntityTicker<A>) ticker : null;
+    }
+
+    static {
+        LEVEL = IntProperty.of("level", 0, 7);
+        // FACING = Properties.HORIZONTAL_FACING;
+    }
 }

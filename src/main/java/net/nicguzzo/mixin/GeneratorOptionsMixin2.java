@@ -27,7 +27,7 @@ import net.nicguzzo.SkyutilsClientMod;
 @Mixin(GeneratorOptions.class)
 class GeneratorOptionsMixin2 {
 
-    @ModifyVariable(method = "<init>", at = @At("HEAD"), index = 4, ordinal = 1, print = true)
+    @ModifyVariable(method = "<init>", at = @At("HEAD"), index = 4, ordinal = 1/* , print = true */)
     static private boolean injected(boolean b) {
         if (SkyutilsClientMod.skyblock) {
             System.out.println("force bonus chest!!!!");
