@@ -10,6 +10,7 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -54,23 +55,25 @@ public class Crucible extends Item {
                     if (blockState.getBlock() instanceof FluidDrainable) {
                         ItemStack fluid_item = ((FluidDrainable) blockState.getBlock()).tryDrainFluid(world, blockPos,
                                 blockState);
+                        //System.out.println("fluid: "+fluid_item);
 
                         if (fluid_item != ItemStack.EMPTY) {
                             user.incrementStat(Stats.USED.getOrCreateStat(this));
                             ItemStack item = null;
-                            if (fluid_item.getItem() == SkyutilsMod.LAVA_CRUCIBLE) {
+                            if (fluid_item.getItem() == Items.LAVA_BUCKET || fluid_item.getItem() == SkyutilsMod.LAVA_CRUCIBLE) {
                                 item = new ItemStack(SkyutilsMod.LAVA_CRUCIBLE);
-                            } else if (fluid_item.getItem() == SkyutilsMod.WATER_CRUCIBLE) {
+                            } else if (fluid_item.getItem() == Items.WATER_BUCKET || fluid_item.getItem() == SkyutilsMod.WATER_CRUCIBLE) {
                                 item = new ItemStack(SkyutilsMod.WATER_CRUCIBLE);
                             }
-                            user.playSound(fluid.matchesType(Fluids.LAVA) ? SoundEvents.ITEM_BUCKET_FILL_LAVA
-                                    : SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
-                            ItemStack itemStack2 = this.getFilledStack(itemStack, user, item.getItem());
-                            if (!world.isClient) {
-                                Criteria.FILLED_BUCKET.trigger((ServerPlayerEntity) user, item);
+                            if(item!=null){
+                                user.playSound(fluid_item.getItem() == Items.LAVA_BUCKET ? SoundEvents.ITEM_BUCKET_FILL_LAVA
+                                        : SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
+                                ItemStack itemStack2 = this.getFilledStack(itemStack, user, item.getItem());
+                                if (!world.isClient) {
+                                    Criteria.FILLED_BUCKET.trigger((ServerPlayerEntity) user, item);
+                                }
+                                return TypedActionResult.success(itemStack2);
                             }
-
-                            return TypedActionResult.success(itemStack2);
                         }
                     }
 

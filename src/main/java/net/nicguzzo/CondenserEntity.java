@@ -69,7 +69,7 @@ public class CondenserEntity extends BlockEntity implements BlockEntityClientSer
     @Override
     public void readNbt(NbtCompound tag) {
         super.readNbt(tag);
-        System.out.println("fromTag");
+        //System.out.println("fromTag");
         time = tag.getInt("number");
         level = tag.getInt("level");
     }
@@ -111,7 +111,7 @@ public class CondenserEntity extends BlockEntity implements BlockEntityClientSer
                     if (blockEntity.getTime() % d == 0 && blockEntity.getLevel() < 7) {
                         blockEntity.incLevel();
                         block.incLevel(world, pos, state);
-                        System.out.println("condenser level " + blockEntity.getLevel());
+                        //System.out.println("condenser level " + blockEntity.getLevel());
                     }
                 }
                 blockEntity.incTime();
