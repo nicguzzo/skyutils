@@ -20,9 +20,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-import net.nicguzzo.SkyutilsClientMod;
+import net.nicguzzo.SkyutilsMod;
 
 @Mixin(GeneratorOptions.class)
 class GeneratorOptionsMixin {
@@ -59,6 +58,8 @@ class GeneratorOptionsMixin {
 
             cir.setReturnValue(new GeneratorOptions(l, bl, true,
                     GeneratorOptions.getRegistryWithReplacedOverworldGenerator(registry, simpleRegistry, chunk_generator)));
+        }else{
+            SkyutilsMod.is_skyblock=false;
         }
     }
 

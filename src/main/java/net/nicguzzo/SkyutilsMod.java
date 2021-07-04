@@ -1,16 +1,9 @@
 package net.nicguzzo;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.MapColor;
 import net.minecraft.block.Material;
@@ -33,7 +26,8 @@ import net.nicguzzo.kiln.KilnScreenHandler;
 
 public class SkyutilsMod implements ModInitializer {
 
-	public static SkyutilsConfig config;
+
+	public static boolean is_skyblock=false;
 
 	public static final Identifier KILN = new Identifier("skyutils", "kiln");
 	public static final Identifier CONDENSER = new Identifier("skyutils", "condenser");
@@ -87,11 +81,11 @@ public class SkyutilsMod implements ModInitializer {
 	@Override
 	public void onInitialize() {
 
-		load_config();
+		SkyutilsConfig.load_config();
 		Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils", "skyblock_island"),
 				SkyblockChunkGenerator.CODEC);
-		Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils", "skyblock_island_nether"),
-				SkyblockNetherChunkGenerator.CODEC);
+		//Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils", "skyblock_island_nether"),
+				//SkyblockNetherChunkGenerator.CODEC);
 		// items
 		Registry.register(Registry.ITEM, new Identifier("skyutils", "wooden_hammer"), WOODEN_HAMMER);
 		Registry.register(Registry.ITEM, new Identifier("skyutils", "stone_hammer"), STONE_HAMMER);
@@ -124,25 +118,5 @@ public class SkyutilsMod implements ModInitializer {
 
 	}
 
-	private void load_config() {
-		File configFile = new File(FabricLoader.getInstance().getConfigDir().toString(), "skyutils.json");
-		try (FileReader reader = new FileReader(configFile)) {
-			config = new Gson().fromJson(reader, SkyutilsConfig.class);
-			try (FileWriter writer = new FileWriter(configFile)) {
-				writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(config));
-			} catch (IOException e2) {
-				System.out.println("Failed to update config file!");
-			}
-			System.out.println("Config loaded!");
-
-		} catch (IOException e) {
-			System.out.println("No config found, generating!");
-			config = new SkyutilsConfig();
-			try (FileWriter writer = new FileWriter(configFile)) {
-				writer.write(new GsonBuilder().setPrettyPrinting().create().toJson(config));
-			} catch (IOException e2) {
-				System.out.println("Failed to generate config file!");
-			}
-		}
-	}
+	
 }

@@ -31,6 +31,7 @@ public class SkyutilsClientMod implements ClientModInitializer {
 				Registry<ChunkGeneratorSettings> chunkGeneratorSettingsRegistry, long seed) {
 
 			SkyutilsClientMod.skyblock = true;
+			SkyutilsMod.is_skyblock=true;
 			BiomeSource bs = new VanillaLayeredBiomeSource(seed, false, false, biomeRegistry);
 			return new SkyblockChunkGenerator(bs, seed,
 					() -> chunkGeneratorSettingsRegistry.get(ChunkGeneratorSettings.FLOATING_ISLANDS));

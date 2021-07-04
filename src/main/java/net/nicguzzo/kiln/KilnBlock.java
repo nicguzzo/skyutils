@@ -28,7 +28,6 @@ import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.nicguzzo.SkyutilsMod;
 
@@ -49,7 +48,6 @@ public class KilnBlock extends BlockWithEntity {
 
     @Override
     public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-        // TODO Auto-generated method stub
         return new KilnBlockEntity(pos, state);
     }
 

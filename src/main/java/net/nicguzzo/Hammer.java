@@ -1,7 +1,5 @@
 package net.nicguzzo;
 
-import java.util.Set;
-
 import com.google.common.collect.ImmutableSet;
 
 import net.minecraft.block.Block;
