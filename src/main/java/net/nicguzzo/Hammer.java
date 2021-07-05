@@ -28,7 +28,6 @@ public class Hammer extends MiningToolItem {
 
     public Hammer(ToolMaterial material, int attackDamage, float attackSpeed, Item.Settings settings) {
         super((float) attackDamage, attackSpeed, material, EFFECTIVE_BLOCKS, settings);
-
     }
 
     @Override
@@ -77,12 +76,12 @@ public class Hammer extends MiningToolItem {
             stack = new ItemStack(SkyutilsMod.PEBBLE, (int) chance + 3);
         } else if (path.equals("podzol")) {
             stack = new ItemStack(SkyutilsMod.PEBBLE, (int) chance + 3);
-            if (world.random.nextFloat() < 0.2) {
-                if (world.random.nextFloat() < 0.5) {
-                    stack2 = new ItemStack(Items.BROWN_MUSHROOM, (int) chance);
-                } else {
-                    stack2 = new ItemStack(Items.RED_MUSHROOM, (int) chance);
-                }
+            if (world.random.nextFloat() < 0.2) {                
+                switch((int)(world.random.nextFloat()*3)){
+                    case 0: stack2 = new ItemStack(Items.BROWN_MUSHROOM, (int) chance); break;
+                    case 1: stack2 = new ItemStack(Items.RED_MUSHROOM, (int) chance);   break;
+                    case 2: stack2 = new ItemStack(Items.FERN, (int) chance);   break;
+                }                
             }
         } else if (path.equals("grass_block")) {
             stack = new ItemStack(SkyutilsMod.PEBBLE, (int) chance + 3);

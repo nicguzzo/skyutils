@@ -69,9 +69,10 @@ public class NetherMixin{
             cir.setReturnValue(chunk);
         }        
     }
-    @Inject(method = "buildBedrock(Lnet/minecraft/world/chunk/Chunk;II)Lnet/minecraft/world/chunk/Chunk;Ljava/util/Random", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "buildBedrock", at = @At("HEAD"), cancellable = true)
     public void buildBedrock(Chunk chunk, Random random,CallbackInfo ci){
-        if(skb && nth && !SkyutilsConfig.INSTANCE.nether_bedrock)
+        SkyutilsConfig config=SkyutilsConfig.get_instance();
+        if(skb && nth && !config.nether_bedrock)
             ci.cancel();
     }
 }

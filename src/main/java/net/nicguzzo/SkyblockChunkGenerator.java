@@ -59,7 +59,6 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
             return skyblockChunkGenerator.settings;
         })).apply(instance, instance.stable(SkyblockChunkGenerator::new));
     });
-
     private final OctavePerlinNoiseSampler noise2;
     private final PerlinNoiseSampler perlinNoiseSampler;
     private final int verticalNoiseResolution;
@@ -67,7 +66,8 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     // private static BlockState glass;
     private static BlockState stone;
     private static BlockState water;
-    private int spawn_radius = 60;
+    SkyutilsConfig config;
+    private int spawn_radius =60;
     private int separation = 20;
     private int height_variation = 30;
     private int height_end = 120;
@@ -161,7 +161,8 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         GenerationShapeConfig generationShapeConfig = chunkGeneratorSettings.getGenerationShapeConfig();
 
         this.verticalNoiseResolution = BiomeCoords.toBlock(generationShapeConfig.getSizeVertical());
-
+        config=SkyutilsConfig.get_instance();
+        //spawn_radius=config.spawn_island_radius;
         rad2 = spawn_radius * spawn_radius;
         ChunkRandom chunkRandom = new ChunkRandom(seed);
         this.noise2 = new OctavePerlinNoiseSampler(chunkRandom, IntStream.rangeClosed(-5, 0));
@@ -170,6 +171,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         LOGGER.info("SkyblockChunkGenerator");
         // LOGGER.info("sealevel " + getSeaLevel());
         SkyutilsMod.is_skyblock=true;
+        
     }
 
     protected Codec<? extends ChunkGenerator> getCodec() {
@@ -214,7 +216,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         int l = chunkPos2.getStartZ();
         // double d = 0.0625D;
         BlockPos.Mutable mutable = new BlockPos.Mutable();
-
+        
         for (int m = 0; m < 16; ++m) {
             for (int n = 0; n < 16; ++n) {
                 int o = k + m;
@@ -330,13 +332,19 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         ChunkPos chunkPos = chunk.getPos();
         WorldAccess world = accessor.world;
         // boolean on_test = chunkPos.x == 70 && chunkPos.z == 211;
-
+        BlockPos.Mutable mutable = new BlockPos.Mutable();
+        Heightmap heightmap = chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG);
+        Heightmap heightmap2 = chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG);
+        int chsx = chunkPos.getStartX();
+        int chsz = chunkPos.getStartZ();
+        int chex = chunkPos.getEndX();
+        int chez = chunkPos.getEndZ();
         if (first) {
             first = false;
             spawn_cx = world.getLevelProperties().getSpawnX();
             spawn_cz = world.getLevelProperties().getSpawnZ();
-
-            pbls[0] = new Pbl(spawn_cx, 0, spawn_cz, 1);
+            System.out.println("spawn_island_radius: "+config.spawn_island_radius);
+            pbls[0] = new Pbl(spawn_cx, 0, spawn_cz, config.spawn_island_radius);
             int sep2 = separation / 2;
             int h2 = height_variation / 2;
             for (int i = 1; i < n_pbl; i++) {
@@ -346,21 +354,15 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 int rz = -sep2 + (int) (world.getRandom().nextDouble() * separation);
                 pbls[i] = new Pbl(spawn_cx + rx, ry, spawn_cz + rz, r);
             }
-        }
-        int chsx = chunkPos.getStartX();
-        int chsz = chunkPos.getStartZ();
-        int chex = chunkPos.getEndX();
-        int chez = chunkPos.getEndZ();
-
-        BlockPos.Mutable mutable = new BlockPos.Mutable();
-        Heightmap heightmap = chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG);
-        Heightmap heightmap2 = chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG);
+        }        
         boolean has_struct = false;
 
         // StructureWeightSampler structureWeightSampler = new
         // StructureWeightSampler(accessor, chunk);
 
         for (int j = 0; j < features.length; j++) {
+            if(features[j]== StructureFeature.VILLAGE && !config.villages)
+                continue;
             boolean bb = isStructureAt(world, chunk, accessor, ChunkSectionPos.from(chunkPos, 0), true, features[j]);
             has_struct = bb || has_struct;
         }
@@ -392,10 +394,13 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
             chnks[7].z = chunkPos.z - 1;
 
             for (int i = 0; i < chnks.length; i++) {
+                
                 // Chunk ch=world.getExistingChunk(chnks[i].x, chnks[i].z);
                 Chunk chnk = world.getChunk(chnks[i].x, chnks[i].z, ChunkStatus.STRUCTURE_STARTS);
                 ChunkPos chunkPos2 = chnk.getPos();
                 for (int j = 0; j < features.length; j++) {
+                    if(features[j]== StructureFeature.VILLAGE && !config.villages)
+                        continue;
                     StructureStart<?> fe = accessor.getStructureStart(ChunkSectionPos.from(chnk.getPos(), 0),
                             features[j], chnk);
                     if (fe != null && fe.hasChildren()) {
@@ -415,6 +420,8 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 if (i < 4) {
                     ChunkSectionPos pos = ChunkSectionPos.from(chnks[i].x, 0, chnks[i].z);
                     for (int j = 0; j < features2.length; j++) {
+                        if(features2[j]== StructureFeature.VILLAGE && !config.villages)
+                            continue;
                         try {
                             Optional<? extends StructureStart<?>> vv = getStructuresWithChildren2(world, accessor, chnk,
                                     features2[j]).filter((structureStart) -> {
@@ -439,6 +446,8 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 }
             }
         }
+       
+        
 
         if (has_struct || around || inside_radius(spawn_cx, spawn_cz, chsx, chsz, rad2)
                 || inside_radius(spawn_cx, spawn_cz, chex, chsz, rad2)
@@ -521,12 +530,12 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
             SpawnHelper.populateEntities(region, biome, chunkPos, chunkRandom);
         }
     }
-
     static {
         AIR = Blocks.AIR.getDefaultState();
         // glass = Blocks.GLASS.getDefaultState();
         stone = Blocks.STONE.getDefaultState();
         water = Blocks.WATER.getDefaultState();
+        
         circles[0] = new Circle(0, 0, 0);
         circles[1] = new Circle(0, 0, 0);
         circles[2] = new Circle(0, 0, 0);
@@ -539,5 +548,6 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         chnks[5] = new Vec2i(0, 0);
         chnks[6] = new Vec2i(0, 0);
         chnks[7] = new Vec2i(0, 0);
+        
     }
 }

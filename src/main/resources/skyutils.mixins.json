@@ -7,7 +7,8 @@
     "BlockMixin",
     "ComposterMixin",
     "NetherMixin",
-    "ChunkGeneratorSettingsMixin"
+    "ChunkGeneratorSettingsMixin",
+    "DefaultBiomeFeaturesMixin"
   ],
   "server": [
     "GeneratorOptionsMixin"

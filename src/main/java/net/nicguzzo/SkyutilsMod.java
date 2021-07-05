@@ -1,10 +1,13 @@
 package net.nicguzzo;
 
 
+import com.google.common.collect.ImmutableList;
+
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.MapColor;
 import net.minecraft.block.Material;
 import net.minecraft.block.AbstractBlock.Settings;
@@ -16,10 +19,21 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ToolMaterials;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.tag.BlockTags;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.intprovider.UniformIntProvider;
+import net.minecraft.util.registry.BuiltinRegistries;
 import net.minecraft.util.registry.Registry;
-
+import net.minecraft.world.gen.decorator.ChanceDecoratorConfig;
+import net.minecraft.world.gen.decorator.Decorator;
+import net.minecraft.world.gen.feature.ConfiguredFeature;
+import net.minecraft.world.gen.feature.Feature;
+import net.minecraft.world.gen.feature.GeodeCrackConfig;
+import net.minecraft.world.gen.feature.GeodeFeatureConfig;
+import net.minecraft.world.gen.feature.GeodeLayerConfig;
+import net.minecraft.world.gen.feature.GeodeLayerThicknessConfig;
+import net.minecraft.world.gen.stateprovider.SimpleBlockStateProvider;
 import net.nicguzzo.kiln.KilnBlock;
 import net.nicguzzo.kiln.KilnBlockEntity;
 import net.nicguzzo.kiln.KilnScreenHandler;
@@ -78,14 +92,41 @@ public class SkyutilsMod implements ModInitializer {
 
 	public static BlockPos spwn;
 
+	private static final Feature<GeodeFeatureConfig> GEODE2 = new Geode2Feature(GeodeFeatureConfig.CODEC);
+	public static final ConfiguredFeature<?, ?> GEODE2_CONFIGURED =GEODE2.configure(new GeodeFeatureConfig(
+		new GeodeLayerConfig(
+			new SimpleBlockStateProvider(Blocks.AIR.getDefaultState()), 
+			new SimpleBlockStateProvider(Blocks.AMETHYST_BLOCK.getDefaultState()), 
+			new SimpleBlockStateProvider(Blocks.BUDDING_AMETHYST.getDefaultState()), 
+			new SimpleBlockStateProvider(Blocks.CALCITE.getDefaultState()), 
+			new SimpleBlockStateProvider(Blocks.SMOOTH_BASALT.getDefaultState()), 
+			ImmutableList.of(
+				Blocks.SMALL_AMETHYST_BUD.getDefaultState(), 
+				Blocks.MEDIUM_AMETHYST_BUD.getDefaultState(), 
+				Blocks.LARGE_AMETHYST_BUD.getDefaultState(), 
+				Blocks.AMETHYST_CLUSTER.getDefaultState()
+			), 
+			BlockTags.FEATURES_CANNOT_REPLACE.getId(), 
+			BlockTags.GEODE_INVALID_BLOCKS.getId()
+		), 
+		new GeodeLayerThicknessConfig(1.7D, 2.2D, 3.2D, 4.2D), 
+		new GeodeCrackConfig(0.95D, 2.0D, 2), 0.35D, 0.083D, true, 
+		UniformIntProvider.create(4, 6), 
+		UniformIntProvider.create(3, 4), 
+		UniformIntProvider.create(1, 2), -16, 16, 0.05D, 1
+	))
+	.decorate(Decorator.CHANCE.configure(new ChanceDecoratorConfig(100)));
+
 	@Override
 	public void onInitialize() {
-
-		SkyutilsConfig.load_config();
+		SkyutilsConfig config=SkyutilsConfig.get_instance();
 		Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils", "skyblock_island"),
 				SkyblockChunkGenerator.CODEC);
 		//Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils", "skyblock_island_nether"),
 				//SkyblockNetherChunkGenerator.CODEC);
+
+		Registry.register(Registry.FEATURE, new Identifier("skyutils", "geode2"), GEODE2);
+
 		// items
 		Registry.register(Registry.ITEM, new Identifier("skyutils", "wooden_hammer"), WOODEN_HAMMER);
 		Registry.register(Registry.ITEM, new Identifier("skyutils", "stone_hammer"), STONE_HAMMER);
@@ -116,6 +157,7 @@ public class SkyutilsMod implements ModInitializer {
 		Registry.register(Registry.ITEM, CONDENSER, CONDENSER_BLOCK_ITEM);
 		CONDENSER_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CONDENSER, CONDENSER_ENTITY);
 
+		Registry.register(BuiltinRegistries.CONFIGURED_FEATURE, new Identifier("skyutils", "geode2"), GEODE2_CONFIGURED);
 	}
 
 	

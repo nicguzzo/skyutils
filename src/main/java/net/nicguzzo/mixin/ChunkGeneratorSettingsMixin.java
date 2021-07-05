@@ -3,6 +3,7 @@ package net.nicguzzo.mixin;
 import com.google.common.collect.Maps;
 import net.minecraft.world.gen.chunk.*;
 import net.minecraft.world.gen.feature.StructureFeature;
+import net.nicguzzo.SkyutilsConfig;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,7 +18,11 @@ public class ChunkGeneratorSettingsMixin {
     @ModifyVariable(method = "createIslandSettings", at = @At("HEAD"), index = 0, ordinal = 0)
     static private StructuresConfig injected(StructuresConfig s) {
         Map<StructureFeature<?>, StructureConfig> DEFAULT_STRUCTURES = Maps.newHashMap();
-        DEFAULT_STRUCTURES.put(StructureFeature.VILLAGE, new StructureConfig(32, 8, 10387312));
+        SkyutilsConfig config=SkyutilsConfig.get_instance();
+        System.out.println("createIslandSettings");
+        if(config.villages){
+            DEFAULT_STRUCTURES.put(StructureFeature.VILLAGE, new StructureConfig(32, 8, 10387312));
+        }
         DEFAULT_STRUCTURES.put(StructureFeature.DESERT_PYRAMID, new StructureConfig(32, 8, 14357617));
         DEFAULT_STRUCTURES.put(StructureFeature.IGLOO, new StructureConfig(32, 8, 14357618));
         DEFAULT_STRUCTURES.put(StructureFeature.JUNGLE_PYRAMID, new StructureConfig(32, 8, 14357619));
