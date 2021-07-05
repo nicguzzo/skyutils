@@ -86,9 +86,11 @@ public class Hammer extends MiningToolItem {
         } else if (path.equals("grass_block")) {
             stack = new ItemStack(SkyutilsMod.PEBBLE, (int) chance + 3);
             if (world.random.nextFloat() < 0.2 * chance) {
-                int r = (int) Math.ceil(world.random.nextFloat() * (DIRT_DROPS.length - 1));
+                int r = (int) (world.random.nextFloat() * DIRT_DROPS.length);
                 if (r >= 0 && r < DIRT_DROPS.length) {
                     stack2 = new ItemStack(DIRT_DROPS[r], 1);
+                }else{
+                    stack2 = new ItemStack(DIRT_DROPS[0], 1);
                 }
             }
         } else if (path.equals("charcoal_block")) {

@@ -40,7 +40,7 @@ import net.nicguzzo.kiln.KilnScreenHandler;
 
 public class SkyutilsMod implements ModInitializer {
 
-
+	public static SkyutilsConfig config=SkyutilsConfig.get_instance();
 	public static boolean is_skyblock=false;
 
 	public static final Identifier KILN = new Identifier("skyutils", "kiln");
@@ -115,11 +115,11 @@ public class SkyutilsMod implements ModInitializer {
 		UniformIntProvider.create(3, 4), 
 		UniformIntProvider.create(1, 2), -16, 16, 0.05D, 1
 	))
-	.decorate(Decorator.CHANCE.configure(new ChanceDecoratorConfig(100)));
+	.decorate(Decorator.CHANCE.configure(new ChanceDecoratorConfig(config.geode_rareness)));
 
 	@Override
 	public void onInitialize() {
-		SkyutilsConfig config=SkyutilsConfig.get_instance();
+		
 		Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils", "skyblock_island"),
 				SkyblockChunkGenerator.CODEC);
 		//Registry.register(Registry.CHUNK_GENERATOR, new Identifier("skyutils", "skyblock_island_nether"),

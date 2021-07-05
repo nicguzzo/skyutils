@@ -457,6 +457,10 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 height_end = 62;
                 height_start = height_end - 20;
                 height_end2 = height_end + height_variation;
+            }else{
+                height_end = 120;
+                height_start = height_end - 20;
+                height_end2 = height_end + height_variation;
             }
             float m = (height_end - height_start);
             int yy = height_start + (int) (m / 2) + 1;

@@ -1,0 +1,22 @@
+{
+    "item.skyutils.wooden_hammer": "Martillo de madera",
+    "item.skyutils.stone_hammer": "Martillo de piedra",
+    "item.skyutils.iron_hammer": "Martillo de hierro",
+    "item.skyutils.diamond_hammer": "Martillo de diamante",
+    "item.skyutils.netherite_hammer": "Martillo de netherita",
+    "item.skyutils.woodchips": "Aserrin",
+    "item.skyutils.pebble": "Fragmento de adoquín",
+    "item.skyutils.crucible": "Crisol",
+    "item.skyutils.water_crucible": "Crisol con agua",
+    "item.skyutils.lava_crucible": "Crisol con lava",
+    "item.skyutils.diamond_nugget": "Pepita de diamante",
+    "item.skyutils.raw_crucible": "Crisol crudo",
+    "item.skyutils.charcoal_block": "Bloque de carbón vegetal",
+    "item.skyutils.condenser": "Condensador",
+    "item.skyutils.kiln": "Mufla",
+    "block.skyutils.kiln": "Mufla",
+    "block.skyutils.charcoal_block": "Bloque de carbón vegetal",
+    "block.skyutils.condenser": "Condensador",
+    "container.skyutils.kiln": "Mufla",
+    "generator.skyblock_island": "Isla SkyBlock"
+  }

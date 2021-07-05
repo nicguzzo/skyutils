@@ -15,6 +15,7 @@ public class SkyutilsConfig {
 	public boolean nether_bedrock=false;
 	public float spawn_island_radius=1;
 	public boolean villages=true;
+	public int geode_rareness=200;
 
 	public static SkyutilsConfig get_instance(){
 		if(INSTANCE==null){
