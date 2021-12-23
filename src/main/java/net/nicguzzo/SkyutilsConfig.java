@@ -16,6 +16,24 @@ public class SkyutilsConfig {
 	public float spawn_island_radius=1;
 	public boolean villages=true;
 	public int geode_rareness=200;
+	public boolean generate_islands_below_structs=true;
+	public boolean generate_small_islands=false;
+	public int hammer_iron_nugget_chance=25;
+	public int hammer_sand_redsand_ratio=70;
+	public int hammer_redstone_from_sand_chance=10;
+	public int hammer_redstone_from_redsand_chance=20;
+	public int hammer_grass_extra_chance=20;
+	public int hammer_podzol_extra_chance=20;
+	public int hammer_sand_extra_chance=20;
+	public int hammer_diamond_nugget_chance=5;
+	public int hammer_nether_wart_chance=10;
+	public int hammer_netherite_scarp_chance=1;
+	public int hammer_netherrack_extra_chance=20;
+	public int kiln_lava_cost=16;
+	public int kiln_cobblestone_cook_time=900;
+	public int kiln_crucible_cook_time=100;
+	public int kiln_charcoal_burn_time=100;
+	public int kiln_charcoal_block_burn_time=900;
 
 	public static SkyutilsConfig get_instance(){
 		if(INSTANCE==null){

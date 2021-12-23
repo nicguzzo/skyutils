@@ -21,7 +21,7 @@ public class KilnScreenHandler extends ScreenHandler {
 
     public KilnScreenHandler(int syncId, PlayerInventory playerInventory) {
         
-        this(syncId, playerInventory, new SimpleInventory(INVENTORY_SIZE),new ArrayPropertyDelegate(3));
+        this(syncId, playerInventory, new SimpleInventory(INVENTORY_SIZE),new ArrayPropertyDelegate(4));
     }
  
     protected KilnScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory,PropertyDelegate pd) {
@@ -58,12 +58,16 @@ public class KilnScreenHandler extends ScreenHandler {
         return this.propertyDelegate.get(0);
     }
     @Environment(EnvType.CLIENT)
-    public int getProgress() {
-        return this.propertyDelegate.get(2);
-    }
-    @Environment(EnvType.CLIENT)
     public int getCoocktime() {
         return this.propertyDelegate.get(1);        
+    }
+    @Environment(EnvType.CLIENT)
+    public int getProgress() {
+        return this.propertyDelegate.get(2);
+    }    
+    @Environment(EnvType.CLIENT)
+    public int getFuelTime() {
+        return this.propertyDelegate.get(3);
     }
     
  

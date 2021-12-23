@@ -13,6 +13,8 @@ import net.minecraft.block.Material;
 import net.minecraft.block.AbstractBlock.Settings;
 import net.minecraft.block.entity.BlockEntityType;
 
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.MinecraftClientGame;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -159,6 +161,4 @@ public class SkyutilsMod implements ModInitializer {
 
 		Registry.register(BuiltinRegistries.CONFIGURED_FEATURE, new Identifier("skyutils", "geode2"), GEODE2_CONFIGURED);
 	}
-
-	
 }

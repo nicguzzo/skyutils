@@ -28,6 +28,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.noise.OctavePerlinNoiseSampler;
 import net.minecraft.util.math.noise.PerlinNoiseSampler;
+import net.minecraft.util.math.noise.SimplexNoiseSampler;
 import net.minecraft.world.ChunkRegion;
 import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.Heightmap;
@@ -61,11 +62,14 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     });
     private final OctavePerlinNoiseSampler noise2;
     private final PerlinNoiseSampler perlinNoiseSampler;
+    private final PerlinNoiseSampler perlinNoiseSampler2;
+    private final SimplexNoiseSampler simplexSampler;
     private final int verticalNoiseResolution;
     private static final BlockState AIR;
-    // private static BlockState glass;
+    private static BlockState test_block;
     private static BlockState stone;
     private static BlockState water;
+    
     SkyutilsConfig config;
     private int spawn_radius =60;
     private int separation = 20;
@@ -79,7 +83,10 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     private int spawn_cx = 0;
     private int spawn_cz = 0;
     private boolean first = true;
-
+    private int local_max=-100;
+    private int last_local_max=0;
+    private int last_level=50;
+    
     static final private int n_pbl = 6;
 
     private static class Vec2i {
@@ -167,11 +174,12 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         ChunkRandom chunkRandom = new ChunkRandom(seed);
         this.noise2 = new OctavePerlinNoiseSampler(chunkRandom, IntStream.rangeClosed(-5, 0));
         this.perlinNoiseSampler = this.noise2.getOctave(1);
+        this.perlinNoiseSampler2 = this.noise2.getOctave(2);
+        this.simplexSampler=new SimplexNoiseSampler(chunkRandom);
         // chunkRandom.consume(17292);
         LOGGER.info("SkyblockChunkGenerator");
         // LOGGER.info("sealevel " + getSeaLevel());
         SkyutilsMod.is_skyblock=true;
-        
     }
 
     protected Codec<? extends ChunkGenerator> getCodec() {
@@ -354,105 +362,104 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 int rz = -sep2 + (int) (world.getRandom().nextDouble() * separation);
                 pbls[i] = new Pbl(spawn_cx + rx, ry, spawn_cz + rz, r);
             }
-        }        
+        }
         boolean has_struct = false;
-
+        boolean around = false;
         // StructureWeightSampler structureWeightSampler = new
         // StructureWeightSampler(accessor, chunk);
+        if(config.generate_islands_below_structs){
+            for (int j = 0; j < features.length; j++) {
+                if(features[j]== StructureFeature.VILLAGE && !config.villages)
+                    continue;
+                boolean bb = isStructureAt(world, chunk, accessor, ChunkSectionPos.from(chunkPos, 0), true, features[j]);
+                has_struct = bb || has_struct;
+            }
+            circles[0].rad = 0;
+            circles[1].rad = 0;
+            circles[2].rad = 0;
+            circles[3].rad = 0;
 
-        for (int j = 0; j < features.length; j++) {
-            if(features[j]== StructureFeature.VILLAGE && !config.villages)
-                continue;
-            boolean bb = isStructureAt(world, chunk, accessor, ChunkSectionPos.from(chunkPos, 0), true, features[j]);
-            has_struct = bb || has_struct;
-        }
+            if (!has_struct) {
 
-        boolean around = false;
+                chnks[0].x = chunkPos.x + 1;
+                chnks[0].z = chunkPos.z;
+                chnks[1].x = chunkPos.x - 1;
+                chnks[1].z = chunkPos.z;
+                chnks[2].x = chunkPos.x;
+                chnks[2].z = chunkPos.z + 1;
+                chnks[3].x = chunkPos.x;
+                chnks[3].z = chunkPos.z - 1;
+                chnks[4].x = chunkPos.x + 1;
+                chnks[4].z = chunkPos.z + 1;
+                chnks[5].x = chunkPos.x + 1;
+                chnks[5].z = chunkPos.z - 1;
+                chnks[6].x = chunkPos.x - 1;
+                chnks[6].z = chunkPos.z + 1;
+                chnks[7].x = chunkPos.x - 1;
+                chnks[7].z = chunkPos.z - 1;
 
-        circles[0].rad = 0;
-        circles[1].rad = 0;
-        circles[2].rad = 0;
-        circles[3].rad = 0;
-
-        if (!has_struct) {
-
-            chnks[0].x = chunkPos.x + 1;
-            chnks[0].z = chunkPos.z;
-            chnks[1].x = chunkPos.x - 1;
-            chnks[1].z = chunkPos.z;
-            chnks[2].x = chunkPos.x;
-            chnks[2].z = chunkPos.z + 1;
-            chnks[3].x = chunkPos.x;
-            chnks[3].z = chunkPos.z - 1;
-            chnks[4].x = chunkPos.x + 1;
-            chnks[4].z = chunkPos.z + 1;
-            chnks[5].x = chunkPos.x + 1;
-            chnks[5].z = chunkPos.z - 1;
-            chnks[6].x = chunkPos.x - 1;
-            chnks[6].z = chunkPos.z + 1;
-            chnks[7].x = chunkPos.x - 1;
-            chnks[7].z = chunkPos.z - 1;
-
-            for (int i = 0; i < chnks.length; i++) {
-                
-                // Chunk ch=world.getExistingChunk(chnks[i].x, chnks[i].z);
-                Chunk chnk = world.getChunk(chnks[i].x, chnks[i].z, ChunkStatus.STRUCTURE_STARTS);
-                ChunkPos chunkPos2 = chnk.getPos();
-                for (int j = 0; j < features.length; j++) {
-                    if(features[j]== StructureFeature.VILLAGE && !config.villages)
-                        continue;
-                    StructureStart<?> fe = accessor.getStructureStart(ChunkSectionPos.from(chnk.getPos(), 0),
-                            features[j], chnk);
-                    if (fe != null && fe.hasChildren()) {
-                        around = true;
-                        circles[0].cx = (int) chunkPos2.getStartX()
-                                + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
-                        circles[0].cz = (int) chunkPos2.getStartZ()
-                                + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
-                        circles[0].rad = 400;
-                        break;
-                    }
-                }
-                if (around) {
-                    break;
-                }
-
-                if (i < 4) {
-                    ChunkSectionPos pos = ChunkSectionPos.from(chnks[i].x, 0, chnks[i].z);
-                    for (int j = 0; j < features2.length; j++) {
-                        if(features2[j]== StructureFeature.VILLAGE && !config.villages)
+                for (int i = 0; i < chnks.length; i++) {
+                    
+                    // Chunk ch=world.getExistingChunk(chnks[i].x, chnks[i].z);
+                    Chunk chnk = world.getChunk(chnks[i].x, chnks[i].z, ChunkStatus.STRUCTURE_STARTS);
+                    ChunkPos chunkPos2 = chnk.getPos();
+                    for (int j = 0; j < features.length; j++) {
+                        if(features[j]== StructureFeature.VILLAGE && !config.villages)
                             continue;
-                        try {
-                            Optional<? extends StructureStart<?>> vv = getStructuresWithChildren2(world, accessor, chnk,
-                                    features2[j]).filter((structureStart) -> {
-                                        return structureStart.getChildren().stream().anyMatch((piece) -> {
-                                            return piece.getBoundingBox().intersectsXZ(pos.getMinX(), pos.getMinZ(),
-                                                    pos.getMaxX(), pos.getMaxZ());
-                                        });
-                                    }).findFirst();
-                            if (vv != null && vv.isPresent()) {
-                                around = true;
-                                circles[i].cx = (int) chunkPos2.getStartX()
-                                        + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
-                                circles[i].cz = (int) chunkPos2.getStartZ()
-                                        + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
-                                circles[i].rad = 250;
-                            }
-                        } catch (RuntimeException e) {
-
+                        StructureStart<?> fe = accessor.getStructureStart(ChunkSectionPos.from(chnk.getPos(), 0),
+                                features[j], chnk);
+                        if (fe != null && fe.hasChildren()) {
+                            around = true;
+                            circles[0].cx = (int) chunkPos2.getStartX()
+                                    + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
+                            circles[0].cz = (int) chunkPos2.getStartZ()
+                                    + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
+                            circles[0].rad = 400;
+                            break;
                         }
                     }
+                    if (around) {
+                        break;
+                    }
 
+                    if (i < 4) {
+                        ChunkSectionPos pos = ChunkSectionPos.from(chnks[i].x, 0, chnks[i].z);
+                        for (int j = 0; j < features2.length; j++) {
+                            if(features2[j]== StructureFeature.VILLAGE && !config.villages)
+                                continue;
+                            try {
+                                Optional<? extends StructureStart<?>> vv = getStructuresWithChildren2(world, accessor, chnk,
+                                        features2[j]).filter((structureStart) -> {
+                                            return structureStart.getChildren().stream().anyMatch((piece) -> {
+                                                return piece.getBoundingBox().intersectsXZ(pos.getMinX(), pos.getMinZ(),
+                                                        pos.getMaxX(), pos.getMaxZ());
+                                            });
+                                        }).findFirst();
+                                if (vv != null && vv.isPresent()) {
+                                    around = true;
+                                    circles[i].cx = (int) chunkPos2.getStartX()
+                                            + (chunkPos2.getEndX() - chunkPos2.getStartX() + 1) / 2;
+                                    circles[i].cz = (int) chunkPos2.getStartZ()
+                                            + (chunkPos2.getEndZ() - chunkPos2.getStartZ() + 1) / 2;
+                                    circles[i].rad = 250;
+                                }
+                            } catch (RuntimeException e) {
+
+                            }
+                        }
+
+                    }
                 }
             }
         }
        
         
 
-        if (has_struct || around || inside_radius(spawn_cx, spawn_cz, chsx, chsz, rad2)
+        /*if (has_struct || around || inside_radius(spawn_cx, spawn_cz, chsx, chsz, rad2)
                 || inside_radius(spawn_cx, spawn_cz, chex, chsz, rad2)
                 || inside_radius(spawn_cx, spawn_cz, chsx, chez, rad2)
-                || inside_radius(spawn_cx, spawn_cz, chex, chez, rad2)) {
+                || inside_radius(spawn_cx, spawn_cz, chex, chez, rad2)) */
+        {
             if (has_struct || around) {
                 height_end = 62;
                 height_start = height_end - 20;
@@ -468,14 +475,14 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
             if (around) {
                 yy += 6;
             }
-            int he = height_end2;
+            int he = height_end2;            
 
-            for (int i = height_start; i < he; ++i) {
-                int y = chunk.getBottomY() + i;
-                for (int j = 0; j < 16; ++j) {
-                    bx = chsx + j;
-                    for (int k = 0; k < 16; ++k) {
-                        bz = chsz + k;
+            for (int j = 0; j < 16; ++j) {
+                bx = chsx + j;
+                for (int k = 0; k < 16; ++k) {
+                    bz = chsz + k;
+                    for (int i = height_start; i < he; ++i) {
+                        int y = chunk.getBottomY() + i;
                         // if(inside_radius(cshx+j, cshz+k))
                         {
                             if (has_struct || (circles[0].rad != 0 && circles[0].inside(bx, bz))
@@ -507,11 +514,32 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                                     heightmap2.trackUpdate(j, y, k, stone);
                                 }
                             }
+                        }                        
+                    }
+                    if(config.generate_small_islands){
+                        double scale=0.001;
+                        int level=50;
+                        int height=30;
+                        local_max=0;
+                        last_level=(int)(level+simplexSampler.sample((bx) * scale, 0, (bz) * scale)*30);
+                        scale=0.06;
+                        int midpoint=70;
+                        double sp=perlinNoiseSampler.sample((bx) * scale, 0, (bz) * scale);
+                        double n = midpoint+ sp * midpoint;
+                        if(n<midpoint){
+                            n+=last_level;
+                            int stop=last_level+height;
+                            for (int y2 = (int)n; y2 < stop; ++y2) 
+                            {
+                                chunk.setBlockState(mutable.set(j, y2, k), stone, false);
+                                heightmap.trackUpdate(j, y2, k, stone);
+                                heightmap2.trackUpdate(j, y2, k, stone);
+                            }
                         }
                     }
                 }
             }
-        }
+        }        
         return CompletableFuture.completedFuture(chunk);
     }
 
@@ -536,10 +564,9 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     }
     static {
         AIR = Blocks.AIR.getDefaultState();
-        // glass = Blocks.GLASS.getDefaultState();
+        test_block = Blocks.WHITE_CONCRETE.getDefaultState();
         stone = Blocks.STONE.getDefaultState();
-        water = Blocks.WATER.getDefaultState();
-        
+        water = Blocks.WATER.getDefaultState();        
         circles[0] = new Circle(0, 0, 0);
         circles[1] = new Circle(0, 0, 0);
         circles[2] = new Circle(0, 0, 0);

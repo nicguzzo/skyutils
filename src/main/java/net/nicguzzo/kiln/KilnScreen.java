@@ -40,15 +40,19 @@ public class KilnScreen extends HandledScreen<KilnScreenHandler> {
         int j = this.y;
         this.drawTexture(matrices, i, j, 0, 0, this.backgroundWidth, this.backgroundHeight);
         int p = ((KilnScreenHandler) this.handler).getBurnTime();
-        float prog = (p / (float) KilnBlockEntity.CHARCOAL_BURN_TIME);
-        if (prog != 0) {
-            int l = (int) (12.0 * prog);
-            this.drawTexture(matrices, i + 56, j + 36 + 12 - l, 176, 12 - l, 14, l + 1);
+        int f = ((KilnScreenHandler) this.handler).getFuelTime();
+        if(f!=0){
+            float prog = (p / (float) f);
+            if (prog != 0) {
+                int l = (int) (12.0 * prog);
+                this.drawTexture(matrices, i + 56, j + 36 + 12 - l, 176, 12 - l, 14, l + 1);
+            }
         }
         float prog2 = (float) ((KilnScreenHandler) this.handler).getProgress() / 1000.0f;
         if (prog2 != 0) {
             this.drawTexture(matrices, i + 79, j + 34, 176, 14, (int) (24 * prog2) + 1, 16);
         }
+        
     }
 
 }

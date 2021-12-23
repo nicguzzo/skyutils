@@ -22,14 +22,17 @@ import net.nicguzzo.SkyutilsMod;
 
 public class KilnBlockEntity extends LootableContainerBlockEntity implements BlockEntityClientSerializable {
     private DefaultedList<ItemStack> inventory;
-    private int burn_time = 0;
+    private int burn_time = 0;    
     private int cook_time = 0;
+    private int fuel_time = 0;
     private int progress = 0;
     private static final int INVENTORY_SIZE = 4;
-    public static final int CHARCOAL_BURN_TIME = 1000;
-    public static final int COBBLESTONE_COOK_TIME = 1000;
-    public static final int COBBLESTONE_COST = 16;
-    public static final int RAW_CRUCIBLE_COOK_TIME = 1000;
+    public static final int CHARCOAL_BURN_TIME =  SkyutilsMod.config.kiln_charcoal_burn_time;
+    public static final int CHARCOAL_BLOCK_BURN_TIME = SkyutilsMod.config.kiln_charcoal_block_burn_time;
+    public static final int COBBLESTONE_COOK_TIME = SkyutilsMod.config.kiln_cobblestone_cook_time;
+    public static final int COBBLESTONE_COST = SkyutilsMod.config.kiln_lava_cost;
+    public static final int RAW_CRUCIBLE_COOK_TIME = SkyutilsMod.config.kiln_crucible_cook_time;
+    
     protected final PropertyDelegate propertyDelegate = new PropertyDelegate() {
         @Override
         public int get(int key) {
@@ -40,6 +43,8 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
                     return KilnBlockEntity.this.cook_time;
                 case 2:
                     return KilnBlockEntity.this.progress;
+                case 3:
+                    return KilnBlockEntity.this.fuel_time;
                 default:
                     return 0;
             }
@@ -56,11 +61,14 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
                 case 2:
                     KilnBlockEntity.this.progress = value;
                     break;
+                case 3:
+                    KilnBlockEntity.this.fuel_time = value;
+                    break;
             }
         }
 
         public int size() {
-            return 3;
+            return 4;
         }
     };
 
@@ -104,6 +112,7 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
         super.readNbt(tag);
         this.inventory = DefaultedList.ofSize(this.size(), ItemStack.EMPTY);
         Inventories.readNbt(tag, this.inventory);
+        this.fuel_time = tag.getInt("fuel_time");
         this.burn_time = tag.getInt("burn_time");
         this.cook_time = tag.getInt("cook_time");
         this.progress = tag.getInt("progress");
@@ -112,6 +121,7 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
     @Override
     public NbtCompound writeNbt(NbtCompound tag) {
         super.writeNbt(tag);
+        tag.putInt("fuel_time", this.fuel_time);
         tag.putInt("burn_time", this.burn_time);
         tag.putInt("cook_time", this.cook_time);
         tag.putInt("progress", this.progress);
@@ -133,8 +143,10 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
             ItemStack fuel = (ItemStack) this.inventory.get(2);
             ItemStack out = (ItemStack) this.inventory.get(3);
 
-            if (out.isEmpty()) {
-                if (!crucible.isEmpty()) {
+            
+            if (!crucible.isEmpty()) {
+                if (out.isEmpty()) 
+                {
                     if (!item.isEmpty() && item.getItem() == Items.COBBLESTONE && item.getCount() >= COBBLESTONE_COST) {
                         cook(item, fuel, crucible, COBBLESTONE_COOK_TIME, COBBLESTONE_COST,
                                 (Item) SkyutilsMod.LAVA_CRUCIBLE);
@@ -142,15 +154,16 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
                         this.cook_time = 0;
                         this.progress = 0;
                     }
+                }
+            } else {
+                if (!item.isEmpty() && item.getItem() == SkyutilsMod.RAW_CRUCIBLE) {
+                    cook(item, fuel, crucible, RAW_CRUCIBLE_COOK_TIME, 1, SkyutilsMod.CRUCIBLE);
                 } else {
-                    if (!item.isEmpty() && item.getItem() == SkyutilsMod.RAW_CRUCIBLE) {
-                        cook(item, fuel, crucible, RAW_CRUCIBLE_COOK_TIME, 1, SkyutilsMod.CRUCIBLE);
-                    } else {
-                        this.cook_time = 0;
-                        this.progress = 0;
-                    }
+                    this.cook_time = 0;
+                    this.progress = 0;
                 }
             }
+            
             sync();
         }
 
@@ -170,8 +183,17 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
     private boolean cook(ItemStack item, ItemStack fuel, ItemStack crucible, int total_cook_time, int dec, Item out) {
         if (burn_time == 0) {
             if (!fuel.isEmpty()) {
-                this.burn_time = CHARCOAL_BURN_TIME;
-                fuel.decrement(1);
+                if(fuel.getItem()==Items.CHARCOAL){
+                    this.burn_time = CHARCOAL_BURN_TIME;
+                    this.fuel_time= CHARCOAL_BURN_TIME;
+                }
+                if(fuel.getItem()==SkyutilsMod.CHARCOAL_BLOCK_ITEM){
+                    this.burn_time = CHARCOAL_BLOCK_BURN_TIME;
+                    this.fuel_time = CHARCOAL_BLOCK_BURN_TIME;
+                }
+                if (burn_time > 0){                    
+                    fuel.decrement(1);
+                }
             }
         }
         if (burn_time > 0) {
@@ -183,7 +205,13 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
                 this.cook_time--;
                 this.progress = (int) ((1.0f - (this.cook_time / (float) total_cook_time)) * 1000.0f);
                 if (this.cook_time == 0) {
-                    this.inventory.set(3, new ItemStack(out));
+                    if(item.getItem() == SkyutilsMod.RAW_CRUCIBLE){
+                        int c=this.inventory.get(3).getCount();                        
+                        this.inventory.set(3, new ItemStack(out,c+1));
+                    }else{
+                        this.inventory.set(3, new ItemStack(out));
+                    }
+                    
                     item.decrement(dec);
                     if (crucible != null)
                         crucible.decrement(1);

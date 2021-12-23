@@ -1,5 +1,7 @@
 package net.nicguzzo.mixin;
 
+import net.minecraft.inventory.SidedInventory;
+import net.nicguzzo.composter.Composter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -25,7 +27,7 @@ import net.minecraft.world.WorldAccess;
 @Mixin(ComposterBlock.class)
 public abstract class ComposterMixin {
 
-  private static boolean addToComposter(int level, BlockState state, WorldAccess world, BlockPos pos, ItemStack item) {
+  /*private static boolean addToComposter(int level, BlockState state, WorldAccess world, BlockPos pos, ItemStack item) {
 
     System.out.println("composter level: " + level);
     int j = level + 1;
@@ -35,7 +37,7 @@ public abstract class ComposterMixin {
     }
     return true;
 
-  }
+  }*/
 
   @Shadow
   native private static BlockState emptyComposter(BlockState state, WorldAccess world, BlockPos pos);
@@ -49,7 +51,7 @@ public abstract class ComposterMixin {
     ItemStack itemStack = player.getStackInHand(hand);
     if (i < 8 && ComposterBlock.ITEM_TO_LEVEL_INCREASE_CHANCE.containsKey(itemStack.getItem())) {
       if (i < 7 && !world.isClient) {
-        boolean bl = ComposterMixin.addToComposter(i, state, world, pos, itemStack);
+        boolean bl = Composter.addToComposter(i, state, world, pos, itemStack);
         world.syncWorldEvent(1500, pos, bl ? 1 : 0);
         if (!player.getAbilities().creativeMode) {
           itemStack.decrement(1);
@@ -80,5 +82,19 @@ public abstract class ComposterMixin {
     info.cancel();
     return;
   }
+
+  @Inject(at = @At("HEAD"), method = "getInventory", cancellable = true)
+  public void getInventory(BlockState state, WorldAccess world, BlockPos pos, CallbackInfoReturnable<SidedInventory> info) {
+    int i = (Integer)state.get(ComposterBlock.LEVEL);
+    SidedInventory ret;
+    if (i == 8) {
+      ret = new Composter.FullComposterInventory(state, world, pos, new ItemStack(Items.GRASS_BLOCK));
+    } else {
+      ret = (i < 7 ? new Composter.ComposterInventory(state, world, pos) : new Composter.DummyInventory());
+    }
+    info.setReturnValue(ret);
+    return;
+  }
+
 
 }
