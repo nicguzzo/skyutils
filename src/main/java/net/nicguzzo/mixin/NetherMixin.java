@@ -64,7 +64,7 @@ public class NetherMixin{
         }*/
         skb=SkyutilsMod.is_skyblock;
         nth=false;
-        if(SkyutilsMod.is_skyblock  && accessor.world.getDimension().getSkyProperties()==DimensionType.THE_NETHER_ID){
+        if(SkyutilsMod.is_skyblock  && accessor.world.getDimension().equals(DimensionType.THE_NETHER_ID)){
             nth=true;
             cir.setReturnValue(chunk);
         }        
