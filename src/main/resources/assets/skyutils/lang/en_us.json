@@ -4,8 +4,12 @@
   "item.skyutils.iron_hammer": "Iron hammer",
   "item.skyutils.diamond_hammer": "Diamond hammer",
   "item.skyutils.netherite_hammer": "Netherite hammer",
-  "item.skyutils.woodchips": "Saw dust",
+  "item.skyutils.woodchips": "Sawdust",
   "item.skyutils.pebble": "Pebble",
+  "item.skyutils.andesite_pebble": "Andesite Pebble",
+  "item.skyutils.diorite_pebble": "Diorite Pebble",
+  "item.skyutils.granite_pebble": "Granite Pebble",
+  "item.skyutils.calcite_fragment": "Calcite fragment",
   "item.skyutils.crucible": "Crucible",
   "item.skyutils.water_crucible": "Water crucible",
   "item.skyutils.lava_crucible": "Lava crucible",
@@ -18,5 +22,5 @@
   "block.skyutils.charcoal_block": "Charcoal block",
   "block.skyutils.condenser": "Condenser",
   "container.skyutils.kiln": "Kiln",
-  "generator.skyblock_island": "SkyBlock Island"
+  "generator.skyutils.skyblock": "SkyBlock"
 }

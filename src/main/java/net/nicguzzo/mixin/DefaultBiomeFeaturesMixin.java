@@ -14,6 +14,6 @@ import net.nicguzzo.SkyutilsMod;
 public class DefaultBiomeFeaturesMixin {
   @Inject(method = "addAmethystGeodes(Lnet/minecraft/world/biome/GenerationSettings$Builder;)V", at = @At("TAIL"))
   private static void addAmethystGeodes(GenerationSettings.Builder builder, CallbackInfo ci) {
-    builder.feature(GenerationStep.Feature.UNDERGROUND_STRUCTURES, SkyutilsMod.GEODE2_CONFIGURED);
+    //builder.feature(GenerationStep.Feature.UNDERGROUND_STRUCTURES, SkyutilsMod.GEODE2_CONFIGURED);
   }
 }

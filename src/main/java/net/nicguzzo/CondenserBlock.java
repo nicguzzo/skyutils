@@ -2,12 +2,7 @@ package net.nicguzzo;
 
 import java.util.Optional;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockEntityProvider;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.FluidDrainable;
-import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.block.Material;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
@@ -32,11 +27,9 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
         super(Settings.of(Material.WOOD).nonOpaque());
         setDefaultState(this.stateManager.getDefaultState().with(LEVEL, 0).with(FACING, Direction.NORTH));
     }
-
-    @Nullable
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state,
-            BlockEntityType<T> type) {
-        return !world.isClient ? checkType(type, SkyutilsMod.CONDENSER_ENTITY, CondenserEntity::tick) : null;
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
+        return checkType(type, SkyutilsMod.CONDENSER_ENTITY, (world1, pos, state1, be) -> CondenserEntity.tick(world1, pos, state1, be));
     }
 
     @Override
@@ -51,7 +44,7 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
 
     @Override
     public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return (BlockState) this.getDefaultState().with(FACING, ctx.getPlayerFacing());
+        return this.getDefaultState().with(FACING, ctx.getPlayerFacing());
     }
 
     public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
@@ -60,19 +53,19 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
 
     public void setLevel(World world, BlockPos pos, BlockState state, int level) {
 
-        world.setBlockState(pos, (BlockState) state.with(LEVEL, MathHelper.clamp(level, 0, 7)), 2);
+        world.setBlockState(pos, state.with(LEVEL, MathHelper.clamp(level, 0, 7)), 2);
         world.updateNeighbors(pos, this);
     }
 
     public void incLevel(World world, BlockPos pos, BlockState state) {
-        int level = ((Integer) state.get(LEVEL)) + 1;
-        world.setBlockState(pos, (BlockState) state.with(LEVEL, MathHelper.clamp(level, 0, 7)), 2);
+        int level = state.get(LEVEL) + 1;
+        world.setBlockState(pos, state.with(LEVEL, MathHelper.clamp(level, 0, 7)), 2);
         world.updateNeighbors(pos, this);
     }
 
-    public int getLevel(BlockState state) {
+    /*public int getLevel(BlockState state) {
         return (Integer) state.get(LEVEL);
-    }
+    }*/
 
     // @Override
     // public void precipitationTick(World world, BlockPos pos) {
@@ -89,7 +82,7 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
     @Override
     public ItemStack tryDrainFluid(WorldAccess world, BlockPos pos, BlockState state) {
         if (!world.isClient()) {
-            int i = (Integer) state.get(LEVEL);
+            int i = state.get(LEVEL);
             System.out.println(" tryDrainFluid condenser level " + i);
             if (i == 7) {
                 this.setLevel((World) world, pos, state, 0);
@@ -105,10 +98,16 @@ public class CondenserBlock extends HorizontalFacingBlock implements BlockEntity
         return ItemStack.EMPTY;
     }
 
-    @Nullable
+    /*@Nullable
     static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> checkType(BlockEntityType<A> givenType,
             BlockEntityType<E> expectedType, BlockEntityTicker<? super E> ticker) {
         return expectedType == givenType ? (@Nullable BlockEntityTicker<A>) ticker : null;
+    }*/
+
+    @Nullable
+    @SuppressWarnings("unchecked")
+    protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> checkType(BlockEntityType<A> givenType, BlockEntityType<E> expectedType, BlockEntityTicker<? super E> ticker) {
+        return expectedType == givenType ? (BlockEntityTicker<A>) ticker : null;
     }
 
     static {

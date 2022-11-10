@@ -29,6 +29,7 @@ public class SkyutilsConfig {
 	public int hammer_nether_wart_chance=10;
 	public int hammer_netherite_scarp_chance=1;
 	public int hammer_netherrack_extra_chance=20;
+	public int basalt_amethyst_chance=10;
 	public int kiln_lava_cost=16;
 	public int kiln_cobblestone_cook_time=900;
 	public int kiln_crucible_cook_time=100;

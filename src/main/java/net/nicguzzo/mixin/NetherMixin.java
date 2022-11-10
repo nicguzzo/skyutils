@@ -9,6 +9,7 @@ package net.nicguzzo.mixin;
 
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.dimension.DimensionTypes;
 import net.minecraft.world.gen.StructureAccessor;
 import net.minecraft.world.gen.chunk.NoiseChunkGenerator;
 //import net.minecraft.world.level.LevelProperties;
@@ -46,33 +47,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class NetherMixin{
     static private boolean skb=false;
     static private boolean nth=false;
-    @Inject(method = "populateNoise(Lnet/minecraft/world/gen/StructureAccessor;Lnet/minecraft/world/chunk/Chunk;II)Lnet/minecraft/world/chunk/Chunk;", at = @At("HEAD"), cancellable = true)
+    //@Inject(method = "populateNoise(Lnet/minecraft/world/gen/StructureAccessor;Lnet/minecraft/world/chunk/Chunk;II)Lnet/minecraft/world/chunk/Chunk;", at = @At("HEAD"), cancellable = true)
+    /*@Inject(method = "populateNoise", at = @At("HEAD"), cancellable = true)
     public void populateNoise(StructureAccessor accessor, Chunk chunk, int startY, int noiseSizeY,CallbackInfoReturnable<Chunk> cir) {
-        
-        //System.out.println("populateNoise SkyutilsMod.is_skyblock: "+SkyutilsMod.is_skyblock);
-        //System.out.println("nether hascode: " + accessor.world.getDimension().getSkyProperties());
-        /*if(accessor.world.getLevelProperties() instanceof LevelProperties){
-            LevelProperties p=(LevelProperties)accessor.world.getLevelProperties();
-            if(p.getGeneratorOptions().getChunkGenerator() instanceof SkyblockChunkGenerator){
-                System.out.println("yes!!");
-                SkyutilsMod.is_skyblock=true;
-            }else{
-                System.out.println("no!");
-            }
-        }else{
-            System.out.println("nope :(");
-        }*/
         skb=SkyutilsMod.is_skyblock;
         nth=false;
-        if(SkyutilsMod.is_skyblock  && accessor.world.getDimension().equals(DimensionType.THE_NETHER_ID)){
+        if(SkyutilsMod.is_skyblock  && accessor.world.getDimension().equals(DimensionTypes.THE_NETHER_ID)){
             nth=true;
             cir.setReturnValue(chunk);
         }        
-    }
-    @Inject(method = "buildBedrock", at = @At("HEAD"), cancellable = true)
+    }*/
+    /*@Inject(method = "buildBedrock", at = @At("HEAD"), cancellable = true)
     public void buildBedrock(Chunk chunk, Random random,CallbackInfo ci){
         SkyutilsConfig config=SkyutilsConfig.get_instance();
         if(skb && nth && !config.nether_bedrock)
             ci.cancel();
-    }
+    }*/
 }

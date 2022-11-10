@@ -22,7 +22,7 @@ public class KilnScreen extends HandledScreen<KilnScreenHandler> {
     @Override
     protected void drawForeground(MatrixStack matrices, int mouseX, int mouseY) {
         float p = (float) ((KilnScreenHandler) this.handler).getProgress() / 10.0f;
-        String string = this.title.asString() + " " + String.format("%.01f", p) + "%";
+        String string = String.format("%.01f", p) + "%";
         this.resize(client, width, height);
         this.textRenderer.draw(matrices, string,
                 (float) (this.backgroundWidth / 2 - this.textRenderer.getWidth(string) / 2), 6.0F, 4210752);

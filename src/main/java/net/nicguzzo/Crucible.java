@@ -1,10 +1,7 @@
 package net.nicguzzo;
 
 import net.minecraft.advancement.criterion.Criteria;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.FluidDrainable;
-import net.minecraft.block.FluidFillable;
-import net.minecraft.block.Material;
+import net.minecraft.block.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
@@ -139,7 +136,7 @@ public class Crucible extends Item {
                         : this.placeFluid(player, world, hitResult.getBlockPos().offset(hitResult.getSide()),
                                 (BlockHitResult) null);
             } else {
-                if (world.getDimension().isUltrawarm() && this.fluid.matchesType(Fluids.WATER)) {
+                if (world.getDimension().ultrawarm() && this.fluid.matchesType(Fluids.WATER)) {
                     int i = pos.getX();
                     int j = pos.getY();
                     int k = pos.getZ();

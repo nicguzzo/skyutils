@@ -1,6 +1,5 @@
 package net.nicguzzo.kiln;
 
-import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -13,14 +12,13 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
-
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.nicguzzo.SkyutilsMod;
 
-public class KilnBlockEntity extends LootableContainerBlockEntity implements BlockEntityClientSerializable {
+public class KilnBlockEntity extends LootableContainerBlockEntity {
     private DefaultedList<ItemStack> inventory;
     private int burn_time = 0;    
     private int cook_time = 0;
@@ -84,7 +82,7 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
      */
     @Override
     protected Text getContainerName() {
-        return new TranslatableText("container.kiln");
+        return Text.translatable("container.kiln");
     }
 
     @Override
@@ -119,14 +117,13 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
     }
 
     @Override
-    public NbtCompound writeNbt(NbtCompound tag) {
-        super.writeNbt(tag);
+    public void writeNbt(NbtCompound tag) {
         tag.putInt("fuel_time", this.fuel_time);
         tag.putInt("burn_time", this.burn_time);
         tag.putInt("cook_time", this.cook_time);
         tag.putInt("progress", this.progress);
         Inventories.writeNbt(tag, this.inventory);
-        return tag;
+        super.writeNbt(tag);
     }
 
     public static void tick(World world, BlockPos pos, BlockState state, KilnBlockEntity blockEntity) {
@@ -164,20 +161,10 @@ public class KilnBlockEntity extends LootableContainerBlockEntity implements Blo
                 }
             }
             
-            sync();
+            //sync();
         }
 
         this.markDirty();
-    }
-
-    @Override
-    public void fromClientTag(NbtCompound tag) {
-        this.readNbt(tag);
-    }
-
-    @Override
-    public NbtCompound toClientTag(NbtCompound tag) {
-        return this.writeNbt(tag);
     }
 
     private boolean cook(ItemStack item, ItemStack fuel, ItemStack crucible, int total_cook_time, int dec, Item out) {

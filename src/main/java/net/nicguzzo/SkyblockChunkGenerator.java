@@ -1,16 +1,46 @@
 package net.nicguzzo;
 
-import java.util.Iterator;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import com.google.common.base.Suppliers;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import it.unimi.dsi.fastutil.ints.IntArraySet;
+import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+import net.minecraft.SharedConstants;
+import net.minecraft.structure.PillagerOutpostGenerator;
+import net.minecraft.structure.StructureSet;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.crash.CrashException;
+import net.minecraft.util.crash.CrashReport;
+import net.minecraft.util.crash.CrashReportSection;
+import net.minecraft.util.dynamic.RegistryOps;
+import net.minecraft.util.math.noise.DoublePerlinNoiseSampler;
+import net.minecraft.util.math.random.Random;
+import net.minecraft.util.math.random.RandomSeed;
+import net.minecraft.util.math.random.Xoroshiro128PlusPlusRandom;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryEntry;
+import net.minecraft.util.registry.RegistryEntryList;
+import net.minecraft.world.*;
+import net.minecraft.world.biome.GenerationSettings;
+import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.ReadableContainer;
+import net.minecraft.world.gen.chunk.*;
+import net.minecraft.world.gen.feature.PlacedFeature;
+import net.minecraft.world.gen.feature.util.PlacedFeatureIndexer;
+import net.minecraft.world.gen.noise.NoiseConfig;
+import net.minecraft.world.gen.structure.*;
+import net.nicguzzo.utils.Circle;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -29,11 +59,7 @@ import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.noise.OctavePerlinNoiseSampler;
 import net.minecraft.util.math.noise.PerlinNoiseSampler;
 import net.minecraft.util.math.noise.SimplexNoiseSampler;
-import net.minecraft.world.ChunkRegion;
-import net.minecraft.world.HeightLimitView;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.SpawnHelper;
-import net.minecraft.world.WorldAccess;
+import net.minecraft.util.math.random.ChunkRandom;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.SpawnSettings;
 import net.minecraft.world.biome.source.BiomeAccess;
@@ -41,25 +67,321 @@ import net.minecraft.world.biome.source.BiomeCoords;
 import net.minecraft.world.biome.source.BiomeSource;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.gen.ChunkRandom;
 import net.minecraft.world.gen.GenerationStep;
 import net.minecraft.world.gen.StructureAccessor;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
-import net.minecraft.world.gen.chunk.GenerationShapeConfig;
-import net.minecraft.world.gen.chunk.VerticalBlockSample;
-import net.minecraft.world.gen.feature.StructureFeature;
+import net.minecraft.world.gen.chunk.NoiseChunkGenerator;
 
-public final class SkyblockChunkGenerator extends ChunkGenerator {
+public final class SkyblockChunkGenerator extends NoiseChunkGenerator {
+    private static final Logger LOGGER = LogManager.getLogger();
+    private int spawn_radius =60;
+    private int spawn_cx = 0;
+    private int spawn_cz = 0;
+    private Circle island;
+    private Circle end_void;
+    int island_height=30;
+    double noise_factor=0.1;
+    double noise_factor2=0.01;
+    double noise_factor3=0.001;
+    private boolean first=true;
+    private PerlinNoiseSampler noise1;
+    private PerlinNoiseSampler noise2;
+    private PerlinNoiseSampler noise3;
+    private boolean is_overworld=false;
+    private boolean is_end=false;
+    private boolean is_nether=false;
+    private int base_island_level=64;
+    public static final Codec<SkyblockChunkGenerator> CODEC =
+            RecordCodecBuilder.create(instance ->
+                            NoiseChunkGenerator.createStructureSetRegistryGetter(instance).and(
+                            instance.group(
+                               RegistryOps.createRegistryCodec(Registry.NOISE_KEY).forGetter(generator -> generator.noiseRegistry),
+                                                            (BiomeSource.CODEC.fieldOf("biome_source")).forGetter(ChunkGenerator::getBiomeSource),
+                                                            (ChunkGeneratorSettings.REGISTRY_CODEC.fieldOf("settings")).forGetter(SkyblockChunkGenerator::getSettings)))
+                               .apply(instance, instance.stable(SkyblockChunkGenerator::new)));
+    private final Registry<DoublePerlinNoiseSampler.NoiseParameters> noiseRegistry;
+    private final Supplier<List<PlacedFeatureIndexer.IndexedFeatures>> indexedFeaturesListSupplier;
+    public SkyblockChunkGenerator(Registry<StructureSet> structureRegistry, Registry<DoublePerlinNoiseSampler.NoiseParameters> noiseRegistry,
+                                  BiomeSource biomeSource, RegistryEntry<ChunkGeneratorSettings> settings) {
+        super(structureRegistry, noiseRegistry, biomeSource, settings);
+
+        if(settings.value().defaultBlock().getBlock()==Blocks.STONE){
+            is_overworld=true;
+        }else if(settings.value().defaultBlock().getBlock()==Blocks.END_STONE){
+            is_end=true;
+        }else if(settings.value().defaultBlock().getBlock()==Blocks.NETHERRACK){
+            is_nether=true;
+        }
+        this.noiseRegistry = noiseRegistry;
+        this.indexedFeaturesListSupplier = Suppliers.memoize(() -> PlacedFeatureIndexer.collectIndexedFeatures(List.copyOf(biomeSource.getBiomes()), biomeEntry -> biomeEntry.value().getGenerationSettings().getFeatures(), true));
+    }
+    public RegistryEntry<ChunkGeneratorSettings> getSettings() {
+        return this.settings;
+    }
+
+    @Override
+    protected Codec<? extends ChunkGenerator> getCodec() {
+        return CODEC;
+    }
+
+    @Override
+    public void buildSurface(ChunkRegion region, StructureAccessor structures, NoiseConfig noiseConfig, Chunk chunk) {
+        super.buildSurface(region,structures,noiseConfig,chunk);
+    }
+
+    @Override
+    public CompletableFuture<Chunk> populateNoise(
+            Executor executor, Blender blender, NoiseConfig noiseConfig, StructureAccessor accessor, Chunk chunk) {
+        if(is_nether){
+            return CompletableFuture.completedFuture(chunk);
+        }
+        WorldAccess world = accessor.world;
+        if (first) {
+            first = false;
+            spawn_cx = world.getLevelProperties().getSpawnX();
+            spawn_cz = world.getLevelProperties().getSpawnZ();
+            if(is_overworld) {
+                island = new Circle(spawn_cx, spawn_cz, 21);
+            }else if(is_end) {
+                island = new Circle(0, 0, 49);
+                end_void = new Circle(0, 0, 1000);
+                base_island_level=50;
+            }
+            noise1=new PerlinNoiseSampler(Random.create(noiseConfig.getLegacyWorldSeed()));
+            noise2=new PerlinNoiseSampler(Random.create(noiseConfig.getLegacyWorldSeed()+1));
+            noise3=new PerlinNoiseSampler(Random.create(noiseConfig.getLegacyWorldSeed()+2));
+            /*int sample_dist=16;
+            boolean center_found=false;
+            for (int x = 0; !center_found && x < spawn_cx+sample_dist*2; ++x) {
+                for (int z = 0;!center_found && z < spawn_cz+sample_dist*2; ++z) {
+                    double n=noise1.sample((spawn_cx-sample_dist+x)*noise_factor,0,(spawn_cz-sample_dist+z)*noise_factor);
+                    //LOGGER.info("n: "+n);
+                    if(n<-0.3){
+                        offx=x;
+                        offz=z;
+                        center_found=true;
+                    }
+                }
+            }
+            LOGGER.info("spawn_cx: "+spawn_cx+ " spawn_cz: "+spawn_cz);
+            LOGGER.info("Center found "+ center_found + " offx: "+offx+ " offz: "+offz);*/
+        }
+        ChunkPos pos=chunk.getPos();
+        BlockPos.Mutable mutable = new BlockPos.Mutable();
+        Heightmap heightmap = chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG);
+        Heightmap heightmap2 = chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG);
+        //BlockState blockState = (BlockState) Blocks.WHITE_STAINED_GLASS.getDefaultState();
+        //BlockState blockState = (BlockState) Blocks.STONE.getDefaultState();
+        BlockState blockState = getSettings().value().defaultBlock();
+        int x0=pos.getStartX();
+        int z0=pos.getStartZ();
+        int y0 =base_island_level ;
+        int xx,zz;
+        boolean has_struct=false;
+        if(is_overworld) {
+            if(pos.x==-9 && pos.z==6){
+                System.out.println("pos");
+            }
+            Map<Structure, LongSet> structs=chunk.getStructureReferences();
+
+            //has_struct =! structs.isEmpty();
+            for (Structure key : structs.keySet()) {
+                has_struct = has_struct||
+                        (key instanceof SwampHutStructure) ||
+                        (key instanceof DesertPyramidStructure || (key instanceof WoodlandMansionStructure) ||
+                        (key instanceof JungleTempleStructure) || (key instanceof IglooStructure));
+                /*if(key instanceof JigsawStructure){
+                    JigsawStructure s= (JigsawStructure)key;
+
+                }*/
+            }
+
+            /*has_struct= has_struct|| (StructurePresence.START_PRESENT==accessor.getStructurePresence(pos,Structures.VILLAGE_DESERT.value(),false));
+            has_struct= has_struct|| (StructurePresence.START_PRESENT==accessor.getStructurePresence(pos,Structures.VILLAGE_PLAINS.value(),false));
+            has_struct= has_struct|| (StructurePresence.START_PRESENT==accessor.getStructurePresence(pos,Structures.VILLAGE_SAVANNA.value(),false));
+            has_struct= has_struct|| (StructurePresence.START_PRESENT==accessor.getStructurePresence(pos,Structures.VILLAGE_SNOWY.value(),false));
+            has_struct= has_struct|| (StructurePresence.START_PRESENT==accessor.getStructurePresence(pos,Structures.VILLAGE_TAIGA.value(),false));
+
+            has_struct= has_struct|| (StructurePresence.START_PRESENT==accessor.getStructurePresence(pos,Structures.SWAMP_HUT.value(),false));*/
+
+        }
+        for (int x = 0; x < 16; ++x) {
+            xx=x0 + x;
+             for (int z = 0; z < 16; ++z) {
+                 zz=z0+z;
+                 double island_n=noise2.sample((xx)*noise_factor2,0,(zz)*noise_factor2);
+                 boolean spawn=island.inside(xx,zz);
+                 if(island_n>0.3 || spawn || has_struct) {
+                     y0=base_island_level+(int)(noise3.sample((xx)*noise_factor3,0,(zz)*noise_factor3)*64);
+                     int n = (int) (noise1.sample(xx * noise_factor, 0, zz * noise_factor) * (island_height*(island_n*2)));
+                     /*if(si){
+                         chunk.setBlockState(mutable.set(x, 0, z), blockState, false);
+                     }*/
+                     if(spawn || has_struct /*|| (is_end && end_portal_island.inside(xx,zz))*/) {
+                         if (n > 0) n=-n;
+                     }else{
+                         if(is_end && end_void.inside(xx,zz)){
+                             n=1;
+                         }
+                     }
+                     if (n <= 0) {
+                         int m = y0 + n;
+                         for (int y = m; y <= y0; ++y) {
+                             chunk.setBlockState(mutable.set(x, y, z), blockState, false);
+                             heightmap.trackUpdate(x, y, z, blockState);
+                             heightmap2.trackUpdate(x, y, z, blockState);
+                         }
+                     }
+                 }
+            }
+        }
+        /*if(spawn_cx >=pos.getStartX() && spawn_cx < pos.getEndX() && spawn_cz >=pos.getStartZ() && spawn_cz < pos.getEndZ()) {
+            //List<BlockState> list = this.config.getLayerBlocks();
+            BlockPos.Mutable mutable = new BlockPos.Mutable();
+            Heightmap heightmap = chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG);
+            Heightmap heightmap2 = chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG);
+
+            //for (int i = 0; i < Math.min(chunk.getHeight(), list.size()); ++i) {
+                //BlockState blockState = (BlockState) list.get(i);
+            int i=64;
+            BlockState blockState = (BlockState) Blocks.GLASS.getDefaultState();
+                if (blockState != null) {
+                    int j = chunk.getBottomY() + i;
+
+                    for (int k = 0; k < 16; ++k) {
+                        for (int l = 0; l < 16; ++l) {
+                            chunk.setBlockState(mutable.set(k, j, l), blockState, false);
+                            heightmap.trackUpdate(k, j, l, blockState);
+                            heightmap2.trackUpdate(k, j, l, blockState);
+                        }
+                    }
+                }
+            //}
+        }*/
+        return CompletableFuture.completedFuture(chunk);
+    }
+
+    @Override
+    public void carve(ChunkRegion chunkRegion, long seed, NoiseConfig noiseConfig, BiomeAccess access, StructureAccessor structureAccessor, Chunk chunk, GenerationStep.Carver carver) {
+    }
+
+    @Override
+    public void populateEntities(ChunkRegion region) {
+    }
+
+    public NoiseConfig getNoiseConfig(StructureWorldAccess world) {
+        return NoiseConfig.create(this.settings.value(), world.getRegistryManager().get(Registry.NOISE_KEY), world.getSeed());
+    }
+    static {
+        Registry.register(Registry.CHUNK_GENERATOR, SkyutilsMod.SKYBLOCK, SkyblockChunkGenerator.CODEC);
+    }
+
+    public void generateFeatures(StructureWorldAccess world, Chunk chunk, StructureAccessor structureAccessor) {
+        ChunkPos chunkPos2 = chunk.getPos();
+        if (SharedConstants.isOutsideGenerationArea(chunkPos2)) {
+            return;
+        }
+        ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(chunkPos2, world.getBottomSectionCoord());
+        BlockPos blockPos = chunkSectionPos.getMinPos();
+        Registry<Structure> registry = world.getRegistryManager().get(Registry.STRUCTURE_KEY);
+        Map<Integer, List<Structure>> map = registry.stream().collect(Collectors.groupingBy(structureType -> structureType.getFeatureGenerationStep().ordinal()));
+        List<PlacedFeatureIndexer.IndexedFeatures> list = this.indexedFeaturesListSupplier.get();
+        ChunkRandom chunkRandom = new ChunkRandom(new Xoroshiro128PlusPlusRandom(RandomSeed.getSeed()));
+        long l = chunkRandom.setPopulationSeed(world.getSeed(), blockPos.getX(), blockPos.getZ());
+        ObjectArraySet<Biome> biome_set = new ObjectArraySet();
+        ChunkPos.stream(chunkSectionPos.toChunkPos(), 1).forEach(chunkPos -> {
+            Chunk chunk2 = world.getChunk(chunkPos.x, chunkPos.z);
+            for (ChunkSection chunkSection : chunk2.getSectionArray()) {
+                chunkSection.getBiomeContainer().forEachValue(registryEntry -> biome_set.add(registryEntry.value()));
+                //chunkSection.getBiomeContainer().forEachValue(set::add);
+            }
+        });
+        biome_set.retainAll(this.biomeSource.getBiomes());
+        int i = list.size();
+        try {
+            Registry<PlacedFeature> registry2 = world.getRegistryManager().get(Registry.PLACED_FEATURE_KEY);
+            int j = Math.max(GenerationStep.Feature.values().length, i);
+            for (int k = 0; k < j; ++k) {
+                int m = 0;
+                if (structureAccessor.shouldGenerateStructures()) {
+                    List<Structure> list2 = map.getOrDefault(k, Collections.emptyList());
+                    for (Structure structure : list2) {
+                        chunkRandom.setDecoratorSeed(l, m, k);
+                        Supplier<String> supplier = () -> registry.getKey(structure).map(Object::toString).orElseGet(structure::toString);
+                        try {
+                            if (       structure instanceof NetherFortressStructure
+                                    || structure instanceof MineshaftStructure
+                                    || structure instanceof OceanMonumentStructure
+                                    || structure instanceof JigsawStructure
+                            ){
+
+                            }else {
+                                world.setCurrentlyGeneratingStructureName(supplier);
+                                structureAccessor.getStructureStarts(chunkSectionPos, structure).forEach(
+                                        start -> start.place(world, structureAccessor,
+                                                this, chunkRandom,
+                                                ChunkGenerator.getBlockBoxForChunk(chunk), chunkPos2));
+                            }
+                        }
+                        catch (Exception exception) {
+                            CrashReport crashReport = CrashReport.create(exception, "Feature placement");
+                            crashReport.addElement("Feature").add("Description", supplier::get);
+                            throw new CrashException(crashReport);
+                        }
+                        ++m;
+                    }
+                }
+                if (k >= i) continue;
+                IntArraySet intSet = new IntArraySet();
+                for (Biome biome : biome_set) {
+                    List<RegistryEntryList<PlacedFeature>> list3 = biome.getGenerationSettings().getFeatures();
+                    if (k >= list3.size()) continue;
+                    RegistryEntryList<PlacedFeature> registryEntryList = list3.get(k);
+                    PlacedFeatureIndexer.IndexedFeatures indexedFeatures = list.get(k);
+                    registryEntryList.stream().map(RegistryEntry::value).forEach(placedFeature -> intSet.add(indexedFeatures.indexMapping().applyAsInt((PlacedFeature)placedFeature)));
+                }
+                int n = intSet.size();
+                int[] is = intSet.toIntArray();
+                Arrays.sort(is);
+                PlacedFeatureIndexer.IndexedFeatures indexedFeatures2 = list.get(k);
+                for (int o = 0; o < n; ++o) {
+                    int p = is[o];
+                    PlacedFeature placedFeature2 = indexedFeatures2.features().get(p);
+                    Supplier<String> supplier2 = () -> registry2.getKey(placedFeature2).map(Object::toString).orElseGet(placedFeature2::toString);
+                    chunkRandom.setDecoratorSeed(l, p, k);
+                    try {
+                        world.setCurrentlyGeneratingStructureName(supplier2);
+                        placedFeature2.generate(world, this, chunkRandom, blockPos);
+                        continue;
+                    }
+                    catch (Exception exception2) {
+                        CrashReport crashReport2 = CrashReport.create(exception2, "Feature placement");
+                        crashReport2.addElement("Feature").add("Description", supplier2::get);
+                        throw new CrashException(crashReport2);
+                    }
+                }
+            }
+            world.setCurrentlyGeneratingStructureName(null);
+        }
+        catch (Exception exception3) {
+            CrashReport crashReport3 = CrashReport.create(exception3, "Biome decoration");
+            crashReport3.addElement("Generation").add("CenterX", chunkPos2.x).add("CenterZ", chunkPos2.z).add("Seed", l);
+            throw new CrashException(crashReport3);
+        }
+    }
+
+    /*
     public static final Codec<SkyblockChunkGenerator> CODEC = RecordCodecBuilder.create((instance) -> {
         return instance.group(BiomeSource.CODEC.fieldOf("biome_source").forGetter((skyblockChunkGenerator) -> {
-            return skyblockChunkGenerator.populationSource;
+            return skyblockChunkGenerator.biomeSource;
         }), Codec.LONG.fieldOf("seed").stable().forGetter((skyblockChunkGenerator) -> {
             return skyblockChunkGenerator.seed;
         }), ChunkGeneratorSettings.REGISTRY_CODEC.fieldOf("settings").forGetter((skyblockChunkGenerator) -> {
             return skyblockChunkGenerator.settings;
         })).apply(instance, instance.stable(SkyblockChunkGenerator::new));
     });
+
+
+
     private final OctavePerlinNoiseSampler noise2;
     private final PerlinNoiseSampler perlinNoiseSampler;
     private final PerlinNoiseSampler perlinNoiseSampler2;
@@ -69,9 +391,11 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     private static BlockState test_block;
     private static BlockState stone;
     private static BlockState water;
-    
+
     SkyutilsConfig config;
     private int spawn_radius =60;
+    private int spawn_cx = 0;
+    private int spawn_cz = 0;
     private int separation = 20;
     private int height_variation = 30;
     private int height_end = 120;
@@ -80,8 +404,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     private int bx = 0;
     private int bz = 0;
     private int rad2 = 0;
-    private int spawn_cx = 0;
-    private int spawn_cz = 0;
+
     private boolean first = true;
     private int local_max=-100;
     private int last_local_max=0;
@@ -144,19 +467,20 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     Pbl[] pbls = new Pbl[n_pbl];
     @Nullable
     private long seed;
-    protected final Supplier<ChunkGeneratorSettings> settings;
+    //protected final Supplier<ChunkGeneratorSettings> settings;
 
-    StructureFeature<?>[] features = { StructureFeature.SWAMP_HUT, StructureFeature.VILLAGE,
-            StructureFeature.DESERT_PYRAMID, StructureFeature.IGLOO, StructureFeature.JUNGLE_PYRAMID,
-            StructureFeature.PILLAGER_OUTPOST, StructureFeature.MANSION };
-    StructureFeature<?>[] features2 = { StructureFeature.VILLAGE, StructureFeature.DESERT_PYRAMID,
-            StructureFeature.PILLAGER_OUTPOST, StructureFeature.MANSION };
+    Structure<?>[] features = { Structure.SWAMP_HUT, Structure.VILLAGE,
+            Structure.DESERT_PYRAMID, Structure.IGLOO, Structure.JUNGLE_PYRAMID,
+            Structure.PILLAGER_OUTPOST, Structure.MANSION };
+    Structure<?>[] features2 = { Structure.VILLAGE, Structure.DESERT_PYRAMID,
+            Structure.PILLAGER_OUTPOST, Structure.MANSION };
 
     private static final Logger LOGGER = LogManager.getLogger();
 
     public SkyblockChunkGenerator(BiomeSource biomeSource, long seed, Supplier<ChunkGeneratorSettings> settings) {
         this(biomeSource, biomeSource, seed, settings);
     }
+
 
     private SkyblockChunkGenerator(BiomeSource populationSource, BiomeSource biomeSource, long seed,
             Supplier<ChunkGeneratorSettings> settings) {
@@ -171,7 +495,8 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         config=SkyutilsConfig.get_instance();
         //spawn_radius=config.spawn_island_radius;
         rad2 = spawn_radius * spawn_radius;
-        ChunkRandom chunkRandom = new ChunkRandom(seed);
+
+        ChunkRandom chunkRandom = new ChunkRandom(Random.create(seed));
         this.noise2 = new OctavePerlinNoiseSampler(chunkRandom, IntStream.rangeClosed(-5, 0));
         this.perlinNoiseSampler = this.noise2.getOctave(1);
         this.perlinNoiseSampler2 = this.noise2.getOctave(2);
@@ -188,7 +513,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
 
     @Environment(EnvType.CLIENT)
     public ChunkGenerator withSeed(long seed) {
-        return new SkyblockChunkGenerator(this.populationSource.withSeed(seed), seed, this.settings);
+        return new SkyblockChunkGenerator(this.biomeSource.withSeed(seed), seed, this.settings);
     }
 
     // @Override
@@ -241,27 +566,27 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
 
     public Pool<SpawnSettings.SpawnEntry> getEntitySpawnList(Biome biome, StructureAccessor accessor, SpawnGroup group,
             BlockPos pos) {
-        if (accessor.getStructureAt(pos, true, StructureFeature.SWAMP_HUT).hasChildren()) {
+        if (accessor.getStructureAt(pos, true, Structure.SWAMP_HUT).hasChildren()) {
             if (group == SpawnGroup.MONSTER) {
-                return StructureFeature.SWAMP_HUT.getMonsterSpawns();
+                return Structure.SWAMP_HUT.getMonsterSpawns();
             }
 
             if (group == SpawnGroup.CREATURE) {
-                return StructureFeature.SWAMP_HUT.getCreatureSpawns();
+                return Structure.SWAMP_HUT.getCreatureSpawns();
             }
         }
 
         if (group == SpawnGroup.MONSTER) {
-            if (accessor.getStructureAt(pos, false, StructureFeature.PILLAGER_OUTPOST).hasChildren()) {
-                return StructureFeature.PILLAGER_OUTPOST.getMonsterSpawns();
+            if (accessor.getStructureAt(pos, false, Structure.PILLAGER_OUTPOST).hasChildren()) {
+                return Structure.PILLAGER_OUTPOST.getMonsterSpawns();
             }
 
-            if (accessor.getStructureAt(pos, false, StructureFeature.MONUMENT).hasChildren()) {
-                return StructureFeature.MONUMENT.getMonsterSpawns();
+            if (accessor.getStructureAt(pos, false, Structure.MONUMENT).hasChildren()) {
+                return Structure.MONUMENT.getMonsterSpawns();
             }
 
-            if (accessor.getStructureAt(pos, true, StructureFeature.FORTRESS).hasChildren()) {
-                return StructureFeature.FORTRESS.getMonsterSpawns();
+            if (accessor.getStructureAt(pos, true, Structure.FORTRESS).hasChildren()) {
+                return Structure.FORTRESS.getMonsterSpawns();
             }
         }
 
@@ -282,7 +607,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
     }
 
     public boolean isStructureAt(WorldAccess world, Chunk chunk, StructureAccessor accessor, ChunkSectionPos pos,
-            boolean matchChildren, StructureFeature<?> feature) {
+            boolean matchChildren, Structure<?> feature) {
         Optional<? extends StructureStart<?>> s = getStructuresWithChildren2(world, accessor, chunk, feature)
                 .filter((structureStart) -> {
                     return structureStart.getChildren().stream().anyMatch((piece) -> {
@@ -291,22 +616,13 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                     });
                 }).findFirst();
 
-        /*
-         * Optional<? extends StructureStart<?>> s =
-         * (accessor.getStructuresWithChildren(pos, feature) .filter((structureStart) ->
-         * { return struct_contains(structureStart, pos.getMinPos());
-         * }).filter((structureStart) -> { return !matchChildren ||
-         * structureStart.getChildren().stream().anyMatch((piece) -> { return
-         * piece.getBoundingBox().intersectsXZ(pos.getMinX(), pos.getMinZ(),
-         * pos.getMaxX(), pos.getMaxZ()); }); }).findFirst());
-         */
         if (s.isPresent())
             return true;
         return false;
     }
 
     public Stream<? extends StructureStart<?>> getStructuresWithChildren2(WorldAccess world, StructureAccessor accessor,
-            Chunk chunk, StructureFeature<?> feature) {
+            Chunk chunk, Structure<?> feature) {
         return chunk.getStructureReferences(feature).stream().map((posx) -> {
             return ChunkSectionPos.from(new ChunkPos(posx), 0);
         }).map((posx) -> {
@@ -369,7 +685,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         // StructureWeightSampler(accessor, chunk);
         if(config.generate_islands_below_structs){
             for (int j = 0; j < features.length; j++) {
-                if(features[j]== StructureFeature.VILLAGE && !config.villages)
+                if(features[j]== Structure.VILLAGE && !config.villages)
                     continue;
                 boolean bb = isStructureAt(world, chunk, accessor, ChunkSectionPos.from(chunkPos, 0), true, features[j]);
                 has_struct = bb || has_struct;
@@ -404,7 +720,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                     Chunk chnk = world.getChunk(chnks[i].x, chnks[i].z, ChunkStatus.STRUCTURE_STARTS);
                     ChunkPos chunkPos2 = chnk.getPos();
                     for (int j = 0; j < features.length; j++) {
-                        if(features[j]== StructureFeature.VILLAGE && !config.villages)
+                        if(features[j]== Structure.VILLAGE && !config.villages)
                             continue;
                         StructureStart<?> fe = accessor.getStructureStart(ChunkSectionPos.from(chnk.getPos(), 0),
                                 features[j], chnk);
@@ -425,7 +741,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                     if (i < 4) {
                         ChunkSectionPos pos = ChunkSectionPos.from(chnks[i].x, 0, chnks[i].z);
                         for (int j = 0; j < features2.length; j++) {
-                            if(features2[j]== StructureFeature.VILLAGE && !config.villages)
+                            if(features2[j]== Structure.VILLAGE && !config.villages)
                                 continue;
                             try {
                                 Optional<? extends StructureStart<?>> vv = getStructuresWithChildren2(world, accessor, chnk,
@@ -452,13 +768,7 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
                 }
             }
         }
-       
-        
 
-        /*if (has_struct || around || inside_radius(spawn_cx, spawn_cz, chsx, chsz, rad2)
-                || inside_radius(spawn_cx, spawn_cz, chex, chsz, rad2)
-                || inside_radius(spawn_cx, spawn_cz, chsx, chez, rad2)
-                || inside_radius(spawn_cx, spawn_cz, chex, chez, rad2)) */
         {
             if (has_struct || around) {
                 height_end = 62;
@@ -556,10 +866,9 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         // this.settings.get()).isMobGenerationDisabled())
         {
             ChunkPos chunkPos = region.getCenterPos();
-            Biome biome = region.getBiome(chunkPos.getStartPos());
-            ChunkRandom chunkRandom = new ChunkRandom();
+            ChunkRandom chunkRandom = new ChunkRandom(Random.create());
             chunkRandom.setPopulationSeed(region.getSeed(), chunkPos.getStartX(), chunkPos.getStartZ());
-            SpawnHelper.populateEntities(region, biome, chunkPos, chunkRandom);
+            SpawnHelper.populateEntities(region, region.getBiome(chunkPos.getStartPos()), chunkPos, chunkRandom);
         }
     }
     static {
@@ -580,5 +889,5 @@ public final class SkyblockChunkGenerator extends ChunkGenerator {
         chnks[6] = new Vec2i(0, 0);
         chnks[7] = new Vec2i(0, 0);
         
-    }
+    }*/
 }

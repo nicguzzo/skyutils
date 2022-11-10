@@ -2,7 +2,6 @@ package net.nicguzzo;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.function.Predicate;
 
 import com.google.common.collect.Lists;
@@ -14,29 +13,33 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.BuddingAmethystBlock;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.state.property.Properties;
+import net.minecraft.tag.BlockTags;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.math.intprovider.UniformIntProvider;
 import net.minecraft.util.math.noise.DoublePerlinNoiseSampler;
+import net.minecraft.util.math.random.ChunkRandom;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.StructureWorldAccess;
-import net.minecraft.world.gen.ChunkRandom;
 import net.minecraft.world.gen.feature.Feature;
 import net.minecraft.world.gen.feature.GeodeCrackConfig;
 import net.minecraft.world.gen.feature.GeodeFeatureConfig;
 import net.minecraft.world.gen.feature.GeodeLayerConfig;
 import net.minecraft.world.gen.feature.GeodeLayerThicknessConfig;
 import net.minecraft.world.gen.feature.util.FeatureContext;
+import net.minecraft.world.gen.stateprovider.BlockStateProvider;
 
-public class Geode2Feature extends Feature<GeodeFeatureConfig> {
+public class SkbGeode extends Feature<GeodeFeatureConfig> {
     private static final Direction[] DIRECTIONS = Direction.values();
-    public Geode2Feature(Codec<GeodeFeatureConfig> config) {
+    public SkbGeode(Codec<GeodeFeatureConfig> config) {
       super(config);
     }
    
     @Override
-	public boolean generate(FeatureContext<GeodeFeatureConfig> context) {    
+	public boolean generate(FeatureContext<GeodeFeatureConfig> context) {
       if(!SkyutilsMod.is_skyblock){
          return false;
       }
@@ -48,7 +51,7 @@ public class Geode2Feature extends Feature<GeodeFeatureConfig> {
         int j = geodeFeatureConfig.maxGenOffset;
         List<Pair<BlockPos, Integer>> list = Lists.newLinkedList();
         int k = geodeFeatureConfig.distributionPoints.get(random);
-        ChunkRandom chunkRandom = new ChunkRandom(structureWorldAccess.getSeed());
+        ChunkRandom chunkRandom = new ChunkRandom(random);
         DoublePerlinNoiseSampler doublePerlinNoiseSampler = DoublePerlinNoiseSampler.create(chunkRandom, -4, 1.0D);
         List<BlockPos> list2 = Lists.newLinkedList();
         double d = (double)k / (double)geodeFeatureConfig.outerWallDistance.getMax();
@@ -169,7 +172,8 @@ public class Geode2Feature extends Feature<GeodeFeatureConfig> {
                     BlockPos blockPos5 = blockPos3.offset(direction);
                     FluidState fluidState = structureWorldAccess.getFluidState(blockPos5);
                     if (!fluidState.isEmpty()) {
-                       structureWorldAccess.getFluidTickScheduler().schedule(blockPos5, fluidState.getFluid(), 0);
+                        structureWorldAccess.createAndScheduleFluidTick(blockPos5, fluidState.getFluid(), 0);
+                       //structureWorldAccess.getFluidTickScheduler().schedule(blockPos5, fluidState.getFluid(), 0);
                     }
                  }
               } else if (u >= e) {

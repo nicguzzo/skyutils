@@ -3,13 +3,12 @@ package net.nicguzzo.mixin;
 import net.minecraft.util.registry.DynamicRegistryManager;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
-import net.minecraft.world.biome.source.VanillaLayeredBiomeSource;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
-import net.nicguzzo.SkyblockChunkGenerator;
+//import net.nicguzzo.SkyblockChunkGenerator;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.SimpleRegistry;
 
@@ -25,7 +24,7 @@ import net.nicguzzo.SkyutilsMod;
 
 @Mixin(GeneratorOptions.class)
 class GeneratorOptionsMixin {
-
+/*
     @Inject(method = "fromProperties", at = @At("RETURN"), cancellable = true)
     private static void fromProperties(DynamicRegistryManager dynamicRegistryManager, Properties properties,
             CallbackInfoReturnable<GeneratorOptions> cir) {
@@ -62,5 +61,5 @@ class GeneratorOptionsMixin {
             SkyutilsMod.is_skyblock=false;
         }
     }
-
+*/
 }

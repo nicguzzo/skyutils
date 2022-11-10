@@ -1,16 +1,15 @@
 package net.nicguzzo.mixin;
 
-import net.minecraft.client.world.GeneratorType;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.List;
+import net.minecraft.world.gen.WorldPresets;
 
-@Mixin(GeneratorType.class)
+@Mixin(WorldPresets.class)
 public interface GeneratorTypeAccessor {
-  @Accessor("VALUES")
-  public static List<GeneratorType> getValues() {
+  /*@Accessor("VALUES")
+  public static List<WorldPresets> getValues() {
     throw new AssertionError();
-  }
+  }*/
 }
