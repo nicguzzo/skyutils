@@ -1,7 +1,7 @@
 package net.nicguzzo.mixin;
 
 import net.minecraft.text.Text;
-import net.minecraft.util.registry.DynamicRegistryManager;
+
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.WorldPresets;
 import net.nicguzzo.SkyutilsClientMod;

@@ -1,6 +1,7 @@
 package net.nicguzzo;
 
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -10,15 +11,18 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.MiningToolItem;
 import net.minecraft.item.ToolMaterial;
+import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.stat.Stats;
-import net.minecraft.tag.BlockTags;
-import net.minecraft.util.Identifier;
+
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
-import net.minecraft.tag.TagKey;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Hammer extends MiningToolItem {
     private static final TagKey<Block> EFFECTIVE_BLOCKS;
@@ -65,7 +69,8 @@ public class Hammer extends MiningToolItem {
         return false;
     }
 
-    public static boolean remap_drop(World world, PlayerEntity player, BlockPos pos, BlockState state) {
+    public static List<ItemStack> remap_drop(World world, PlayerEntity player, BlockPos pos, BlockState state) {
+
         Block block=state.getBlock();
         //Identifier identifier = Registry.BLOCK.getId(state.getBlock());
         //String path = identifier.getPath();
@@ -172,17 +177,23 @@ public class Hammer extends MiningToolItem {
         }
 
         if (stack != null) {
-
-            player.incrementStat(Stats.MINED.getOrCreateStat(state.getBlock()));
+            ObjectArrayList<ItemStack> list=new ObjectArrayList<>();
+            list.add(stack);
+            if (stack2 != null) {
+                list.add(stack2);
+            }
+            /*player.incrementStat(Stats.MINED.getOrCreateStat(state.getBlock()));
             player.addExhaustion(0.005F);
             Block.dropStack(world, pos, stack);
             //Block.dropStacks(Block.getBlockFromItem(stack.getItem()).getDefaultState(),world, pos,null,player,player.getMainHandStack() );
             if (stack2 != null) {
                 //Block.dropStacks(Block.getBlockFromItem(stack2.getItem()).getDefaultState(),world, pos,null,player,player.getMainHandStack() );
                 Block.dropStack(world, pos, stack2);
-            }
+            }*/
+            return list;
         }
-        return true;
+        //return true;
+        return Collections.emptyList();
     }
 
     static {

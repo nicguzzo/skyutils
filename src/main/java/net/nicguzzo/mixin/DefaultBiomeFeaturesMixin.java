@@ -1,6 +1,6 @@
 package net.nicguzzo.mixin;
 
-import org.spongepowered.asm.mixin.Mixin;
+/*import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,4 +16,4 @@ public class DefaultBiomeFeaturesMixin {
   private static void addAmethystGeodes(GenerationSettings.Builder builder, CallbackInfo ci) {
     //builder.feature(GenerationStep.Feature.UNDERGROUND_STRUCTURES, SkyutilsMod.GEODE2_CONFIGURED);
   }
-}
+}*/

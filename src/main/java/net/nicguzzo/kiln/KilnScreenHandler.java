@@ -48,7 +48,12 @@ public class KilnScreenHandler extends ScreenHandler {
         }
         this.addProperties(propertyDelegate);
     }
- 
+
+    @Override
+    public ItemStack quickMove(PlayerEntity player, int slot) {
+        return ItemStack.EMPTY;
+    }
+
     @Override
     public boolean canUse(PlayerEntity player) {
         return this.inventory.canPlayerUse(player);

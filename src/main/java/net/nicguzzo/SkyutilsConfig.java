@@ -13,7 +13,16 @@ import com.google.gson.GsonBuilder;
 public class SkyutilsConfig {
 	private static SkyutilsConfig INSTANCE=null;
 	public boolean nether_bedrock=false;
-	public float spawn_island_radius=1;
+	public int spawn_island_radius=21;
+	public int base_island_level=120;
+	public int end_base_island_level=50;
+	public double noise_factor=0.1;
+    public double noise_factor2=0.01;
+    public double noise_factor3=0.001;
+	public int noise3_scale=64;
+	public int island_height=64;
+    public double island_chance=0.5;
+
 	public boolean villages=true;
 	public int geode_rareness=200;
 	public boolean generate_islands_below_structs=true;

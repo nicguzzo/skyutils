@@ -7,7 +7,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.GeneratorOptionsHolder;
 import net.minecraft.text.Text;
-import net.minecraft.util.registry.RegistryEntry;
+///import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.world.biome.Biome;
 
 import java.util.function.Consumer;
@@ -19,7 +19,7 @@ public class SkyblockLevelScreen   extends Screen {
 //    private final Consumer<RegistryEntry<Biome>> onDone;
     //final Registry<Biome> biomeRegistry;
     //private net.minecraft.client.gui.screen.CustomizeBuffetLevelScreen.BuffetBiomesListWidget biomeSelectionList;
-    RegistryEntry<Biome> biome;
+    //RegistryEntry<Biome> biome;
     private ButtonWidget confirmButton;
 
     public SkyblockLevelScreen(Screen parent, GeneratorOptionsHolder generatorOptionsHolder /*, Consumer<RegistryEntry<Biome>> onDone*/) {

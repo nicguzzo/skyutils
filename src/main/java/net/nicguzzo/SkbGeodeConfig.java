@@ -3,7 +3,7 @@ package net.nicguzzo;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.block.Blocks;
-import net.minecraft.tag.BlockTags;
+
 import net.minecraft.util.Identifier;
 import net.minecraft.util.dynamic.Codecs;
 import net.minecraft.util.math.intprovider.UniformIntProvider;

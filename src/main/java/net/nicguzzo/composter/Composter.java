@@ -25,7 +25,8 @@ public class Composter {
             BlockState blockState = (BlockState)state.with(ComposterBlock.LEVEL, j);
             world.setBlockState(pos, blockState, Block.NOTIFY_ALL);
             if (j == 7) {
-                world.createAndScheduleBlockTick(pos, state.getBlock(), 20);
+                world.scheduleBlockTick(pos, state.getBlock(), 20);
+                //world.createAndScheduleBlockTick(pos, state.getBlock(), 20);
             }
 
             return blockState;
@@ -37,7 +38,8 @@ public class Composter {
         int j = level + 1;
         world.setBlockState(pos, (BlockState) state.with(ComposterBlock.LEVEL, j), 3);
         if (j == 7) {
-            world.createAndScheduleBlockTick(pos, state.getBlock(), 20);
+            world.scheduleBlockTick(pos, state.getBlock(), 20);
+            //world.createAndScheduleBlockTick(pos, state.getBlock(), 20);
         }
         return true;
     }

@@ -13,7 +13,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.BuddingAmethystBlock;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.state.property.Properties;
-import net.minecraft.tag.BlockTags;
+
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -43,7 +43,7 @@ public class SkbGeode extends Feature<GeodeFeatureConfig> {
       if(!SkyutilsMod.is_skyblock){
          return false;
       }
-        BlockPos blockPos=context.getOrigin().up(10);
+       /* BlockPos blockPos=context.getOrigin().up(10);
         StructureWorldAccess structureWorldAccess=context.getWorld();
         GeodeFeatureConfig geodeFeatureConfig=(GeodeFeatureConfig)context.getConfig();
         Random random = structureWorldAccess.getRandom();
@@ -172,7 +172,8 @@ public class SkbGeode extends Feature<GeodeFeatureConfig> {
                     BlockPos blockPos5 = blockPos3.offset(direction);
                     FluidState fluidState = structureWorldAccess.getFluidState(blockPos5);
                     if (!fluidState.isEmpty()) {
-                        structureWorldAccess.createAndScheduleFluidTick(blockPos5, fluidState.getFluid(), 0);
+                        //structureWorldAccess.getFluidTickScheduler().scheduleTick();
+                        //structureWorldAccess.createAndScheduleFluidTick(blockPos5, fluidState.getFluid(), 0);
                        //structureWorldAccess.getFluidTickScheduler().schedule(blockPos5, fluidState.getFluid(), 0);
                     }
                  }
@@ -195,6 +196,7 @@ public class SkbGeode extends Feature<GeodeFeatureConfig> {
                  this.setBlockStateIf(structureWorldAccess, blockPos3, geodeLayerConfig.outerLayerProvider.getBlockState(random, blockPos3), predicate);
               }
            }
-        }
-     }
+        }*/
+        return false;
+    }
   }
